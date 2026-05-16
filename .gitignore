@@ -1,0 +1,39 @@
+# Environment
+.env
+*.env.local
+
+# Node
+node_modules/
+dist/
+*.js.map
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Data files
+*.csv
+*.parquet
+*.zip
+data/
+
+# Kaggle credentials (never commit)
+kaggle.json
+.kaggle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Reports output
+reports/*.png
+reports/*.html

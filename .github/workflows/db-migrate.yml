@@ -1,0 +1,57 @@
+name: Database Migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'db/migrations/**'
+      - '.github/workflows/db-migrate.yml'
+  pull_request:
+    paths:
+      - 'db/migrations/**'
+
+jobs:
+  migrate:
+    name: Run SQL migrations
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: poc_user
+          POSTGRES_PASSWORD: poc_password
+          POSTGRES_DB: poc_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poc_user -d poc_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run migrations in order
+        env:
+          PGPASSWORD: poc_password
+        run: |
+          for f in $(ls db/migrations/*.sql | sort); do
+            echo "▶ Running $f"
+            psql -h localhost -U poc_user -d poc_db -f "$f"
+          done
+
+      - name: Verify schemas exist
+        env:
+          PGPASSWORD: poc_password
+        run: |
+          psql -h localhost -U poc_user -d poc_db -c "\dn" | grep -E "staging|analytics"
+          echo "✅ Schemas verified"
+
+      - name: Verify tables exist
+        env:
+          PGPASSWORD: poc_password
+        run: |
+          psql -h localhost -U poc_user -d poc_db \
+            -c "SELECT schemaname, tablename FROM pg_tables WHERE schemaname IN ('staging','analytics');"

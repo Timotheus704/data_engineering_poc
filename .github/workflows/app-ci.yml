@@ -1,0 +1,78 @@
+name: TypeScript App CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/app-ci.yml'
+  pull_request:
+    paths:
+      - 'app/**'
+
+jobs:
+  build-and-test:
+    name: Build TypeScript app
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: poc_user
+          POSTGRES_PASSWORD: poc_password
+          POSTGRES_DB: poc_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poc_user -d poc_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Run DB migrations
+        env:
+          PGPASSWORD: poc_password
+        run: |
+          for f in $(ls db/migrations/*.sql | sort); do
+            echo "▶ $f"
+            psql -h localhost -U poc_user -d poc_db -f "$f"
+          done
+
+      - name: TypeScript build check
+        working-directory: app
+        run: npx tsc --noEmit
+
+      - name: Ping database via app
+        working-directory: app
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: poc_user
+          POSTGRES_PASSWORD: poc_password
+          POSTGRES_DB: poc_db
+        run: npx ts-node src/index.ts ping
+
+      - name: List tables via app
+        working-directory: app
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: poc_user
+          POSTGRES_PASSWORD: poc_password
+          POSTGRES_DB: poc_db
+        run: npx ts-node src/index.ts tables
