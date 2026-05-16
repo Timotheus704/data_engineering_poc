@@ -151,6 +151,21 @@ docker compose up -d postgres
 
 ---
 
+## Documentation
+
+Comprehensive documentation lives in the `docs/` folder. Start at **[docs/INDEX.md](./docs/INDEX.md)**.
+
+| I want to... | Document |
+|---|---|
+| Understand the system design | [Architecture Overview](docs/architecture/overview.md) |
+| Learn how the database is structured | [Database Design](docs/architecture/database-design.md) |
+| Understand Docker usage | [Docker & Containers](docs/architecture/docker.md) |
+| Learn how CI/CD works | [CI/CD Pipeline](docs/architecture/cicd.md) |
+| Add a new dataset | [Adding a Pipeline](docs/guides/adding-a-pipeline.md) |
+| Write a database migration | [Migrations Guide](docs/guides/migrations.md) |
+| Work on the TypeScript app | [TypeScript App Guide](docs/guides/typescript-app.md) |
+| See all CLI commands | [CLI Reference](docs/reference/cli.md) |
+
 ## Project structure
 
-See [CLAUDE.md](./CLAUDE.md) for a full breakdown of conventions and structure.
+See [CLAUDE.md](./CLAUDE.md) for AI assistant context, or [docs/reference/project-structure.md](docs/reference/project-structure.md) for the full annotated file tree.
