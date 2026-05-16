@@ -58,5 +58,39 @@ services:
     command: python nyc_taxi/ingest.py
     profiles: [pipeline]
 
+  # ── Web application ──────────────────────────────────────────────────────────
+
+  web_server:
+    build:
+      context: ./web/server
+      dockerfile: Dockerfile
+    container_name: poc_web_server
+    env_file: .env
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - CORS_ORIGIN=http://localhost:3000
+      - NODE_ENV=production
+      - POSTGRES_HOST=postgres
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles: [web]
+
+  web_client:
+    build:
+      context: ./web/client
+      dockerfile: Dockerfile
+    container_name: poc_web_client
+    ports:
+      - "3000:80"
+    depends_on:
+      - web_server
+    restart: unless-stopped
+    profiles: [web]
+
 volumes:
   postgres_data:

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# dev.sh — start the full web app stack in development mode
+# Usage: ./dev.sh [stop]
+set -e
+
+if [ "$1" = "stop" ]; then
+  echo "Stopping web containers..."
+  docker compose --profile web down
+  exit 0
+fi
+
+echo ""
+echo "╔══════════════════════════════════════════╗"
+echo "║       PoC Platform — Dev Startup        ║"
+echo "╚══════════════════════════════════════════╝"
+echo ""
+
+# 1. Make sure postgres is running
+echo "▶  Starting Postgres..."
+docker compose up -d postgres
+echo "   Waiting for Postgres to be healthy..."
+until docker compose exec postgres pg_isready -U poc_user -d poc_db -q 2>/dev/null; do
+  sleep 1
+done
+echo "   ✅ Postgres ready"
+echo ""
+
+# 2. Install server deps if needed
+if [ ! -d "web/server/node_modules" ]; then
+  echo "▶  Installing server dependencies..."
+  (cd web/server && npm install)
+fi
+
+# 3. Install client deps if needed
+if [ ! -d "web/client/node_modules" ]; then
+  echo "▶  Installing client dependencies..."
+  (cd web/client && npm install)
+fi
+
+echo ""
+echo "▶  Starting API server on http://localhost:3001"
+echo "   Swagger docs: http://localhost:3001/docs"
+echo ""
+echo "▶  Starting React dev server on http://localhost:3000"
+echo ""
+echo "   Press Ctrl+C to stop both servers"
+echo ""
+
+# Start both in parallel, forward Ctrl+C to both
+trap 'kill 0' SIGINT SIGTERM
+
+POSTGRES_HOST=localhost \
+POSTGRES_PORT=5432 \
+POSTGRES_USER=poc_user \
+POSTGRES_PASSWORD=poc_password \
+POSTGRES_DB=poc_db \
+PORT=3001 \
+CORS_ORIGIN=http://localhost:3000 \
+  (cd web/server && npm run dev) &
+
+(cd web/client && npm run dev) &
+
+wait
