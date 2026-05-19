@@ -1,6 +1,6 @@
 # PoC Repo — Data Platform & Full-Stack Demo
 
-A proof-of-concept monorepo demonstrating a complete, locally-hostable data platform: Postgres in Docker, CI/CD for SQL migrations, Kaggle data pipelines, a TypeScript CLI, a Fastify REST API, and a React dashboard — all orchestrated with Docker Compose and runnable on macOS.
+Production-shaped proof-of-concept data platform demonstrating end-to-end workflows: Dockerized PostgreSQL with ordered migrations; Python/Kaggle ingestion with incremental loading; Airflow orchestration and dbt transforms gated by Great Expectations; plus a TypeScript CLI, Fastify REST API (Swagger), and a React dashboard — all runnable locally via Docker Compose.
 
 ---
 
