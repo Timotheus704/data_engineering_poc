@@ -244,4 +244,4 @@ Full documentation lives in `docs/`. Start at **[docs/INDEX.md](./docs/INDEX.md)
 | See all CLI commands | [CLI Reference](docs/reference/cli.md) |
 | Look up environment variables | [Environment Variables](docs/reference/environment-variables.md) |
 
-See [CLAUDE.md](./CLAUDE.md) for AI assistant context and conventions.
+See [AGENTS.md](./AGENTS.md) for AI assistant context and conventions.
