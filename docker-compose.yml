@@ -1,3 +1,29 @@
+x-airflow-common: &airflow-common
+  build:
+    context: ./orchestration/airflow
+    dockerfile: Dockerfile
+  env_file: .env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_SCHEMA: airflow
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    KAGGLE_CONFIG_DIR: /opt/airflow/.kaggle
+    POSTGRES_HOST: postgres
+    PYTHONPATH: /opt/airflow/repo/pipelines
+  user: "${AIRFLOW_UID:-50000}:0"
+  volumes:
+    - ./orchestration/airflow/dags:/opt/airflow/dags
+    - ./orchestration/airflow/logs:/opt/airflow/logs
+    - .:/opt/airflow/repo
+    - ${HOME}/.kaggle:/opt/airflow/.kaggle:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+  profiles: [orchestration]
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -91,6 +117,72 @@ services:
       - web_server
     restart: unless-stopped
     profiles: [web]
+
+  # ── Orchestration and transformation ───────────────────────────────────────
+
+  airflow_init:
+    <<: *airflow-common
+    container_name: poc_airflow_init
+    command: >
+      bash -c "airflow db migrate &&
+      airflow users create
+      --username ${AIRFLOW_ADMIN_USER:-admin}
+      --password ${AIRFLOW_ADMIN_PASSWORD:-admin}
+      --firstname Data
+      --lastname Engineer
+      --role Admin
+      --email ${AIRFLOW_ADMIN_EMAIL:-admin@example.com} || true"
+
+  airflow_webserver:
+    <<: *airflow-common
+    container_name: poc_airflow_webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      airflow_init:
+        condition: service_completed_successfully
+
+  airflow_scheduler:
+    <<: *airflow-common
+    container_name: poc_airflow_scheduler
+    command: scheduler
+    depends_on:
+      airflow_init:
+        condition: service_completed_successfully
+
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.8.2
+    container_name: poc_dbt
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./dbt:/usr/app
+    working_dir: /usr/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: run --profiles-dir .
+    profiles: [transform]
+
+  great_expectations:
+    build:
+      context: ./orchestration/airflow
+      dockerfile: Dockerfile
+    container_name: poc_great_expectations
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      PYTHONPATH: /opt/repo/pipelines
+    volumes:
+      - .:/opt/repo
+    working_dir: /opt/repo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python orchestration/great_expectations/validate.py titanic_staging
+    profiles: [quality]
 
 volumes:
   postgres_data:
