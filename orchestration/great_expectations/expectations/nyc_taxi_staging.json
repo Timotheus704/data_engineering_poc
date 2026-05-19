@@ -1,0 +1,34 @@
+{
+  "expectation_suite_name": "nyc_taxi_staging",
+  "ge_cloud_id": null,
+  "meta": {
+    "great_expectations_version": "0.18.21"
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": { "min_value": 1000, "max_value": 50000 },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "pickup_datetime" },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "passenger_count", "min_value": 1, "max_value": 6 },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "fare_amount", "min_value": 0, "strict_min": true },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "trip_distance", "min_value": 0, "strict_min": true },
+      "meta": {}
+    }
+  ]
+}
