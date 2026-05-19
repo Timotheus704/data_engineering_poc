@@ -14,6 +14,7 @@ Welcome to the PoC Repo documentation. Whether you're a first-time contributor o
 | Understand how Docker is used | [Docker & Containers](architecture/docker.md) |
 | Learn how CI/CD works | [CI/CD Pipeline](architecture/cicd.md) |
 | Understand the web app (API + UI) | [Web App Guide](guides/web-app.md) |
+| Run Airflow, dbt, and data quality checks | [Orchestration Guide](guides/orchestration.md) |
 | Add a new dataset pipeline | [Adding a Pipeline](guides/adding-a-pipeline.md) |
 | Add a new database migration | [Database Migrations Guide](guides/migrations.md) |
 | Work on the TypeScript CLI | [TypeScript CLI Guide](guides/typescript-app.md) |
@@ -37,6 +38,7 @@ docs/
 │   └── cicd.md                     ← GitHub Actions workflows explained
 ├── guides/
 │   ├── quick-start.md              ← Get running in under 10 minutes (updated: web app)
+│   ├── orchestration.md            ← Airflow, dbt, and Great Expectations
 │   ├── web-app.md                  ← Working on the Fastify API + React dashboard
 │   ├── typescript-app.md           ← Working on the TypeScript CLI
 │   ├── adding-a-pipeline.md        ← Step-by-step: new Kaggle dataset
@@ -66,6 +68,9 @@ docs/
 | **Staging schema** | Where raw, freshly ingested data lives before cleaning |
 | **Analytics schema** | Where cleaned, aggregated data and views live for querying |
 | **Pipeline** | An automated process that fetches data from a source, cleans it, and loads it into a database |
+| **DAG** | A directed acyclic graph: the dependency graph a scheduler like Airflow uses to run pipeline tasks in order |
+| **dbt model** | A SQL transformation managed by dbt with lineage, tests, and documentation |
+| **Data quality gate** | A validation step that stops downstream work when source data violates expected rules |
 | **CI/CD** | Continuous Integration / Continuous Delivery — automated checks and deployments that run on every code push |
 | **Environment variable** | A named value (like a password or hostname) set outside the code so secrets never live in source files |
 | **Connection pool** | A set of pre-opened database connections shared across requests, avoiding the cost of opening a new one each time |
