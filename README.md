@@ -1,171 +1,213 @@
-# PoC Repo — Data Engineering & TypeScript Demo
+# PoC Repo — Data Platform & Full-Stack Demo
 
-A proof-of-concept monorepo demonstrating Postgres in Docker, CI/CD for SQL migrations, Kaggle data pipelines, a TypeScript CLI, and data analysis — all runnable locally on macOS.
+A proof-of-concept monorepo demonstrating a complete, locally-hostable data platform: Postgres in Docker, CI/CD for SQL migrations, Kaggle data pipelines, a TypeScript CLI, a Fastify REST API, and a React dashboard — all orchestrated with Docker Compose and runnable on macOS.
+
+---
+
+## What's in this repo
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Database | PostgreSQL 16 (Docker) | Stores all data; two schemas: `staging` and `analytics` |
+| Migrations | Raw SQL + shell loop | Versioned schema changes tracked in `db/migrations/` |
+| Pipelines | Python + pandas | Download Kaggle datasets, clean, and bulk-load into Postgres |
+| CLI App | TypeScript + Node 20 | Terminal interface to query and explore data |
+| Web API | Fastify (TypeScript) | REST API with full CRUD + Swagger docs |
+| Web UI | React + Vite | Dashboard with charts, data tables, CRUD modals, admin panel |
+| CI/CD | GitHub Actions | Runs migrations and TS build checks on every push |
 
 ---
 
 ## Prerequisites
 
-Install these before starting:
-
 | Tool | Version | Install |
 |---|---|---|
 | Docker Desktop | Latest | https://www.docker.com/products/docker-desktop |
 | Node.js | 20+ | `brew install node` |
-| Python | 3.11+ | `brew install python@3.11` |
-| psql (optional) | Any | `brew install libpq && brew link --force libpq` |
+| Python | 3.11+ | `brew install python@3.11` *(pipelines only)* |
+| psql | Any | `brew install libpq && brew link --force libpq` *(optional)* |
 
 ---
 
-## 1. Clone and configure
+## Quick start
+
+### 1. Clone and configure
 
 ```bash
 git clone <your-repo-url>
 cd poc-repo
-
-# Create your local environment file
-cp .env.example .env
-# The defaults in .env.example work out of the box for local dev
+cp .env.example .env          # defaults work out of the box
 ```
 
----
-
-## 2. Start Postgres
+### 2. Start Postgres
 
 ```bash
 docker compose up -d postgres
-
-# Verify it's healthy
-docker compose ps
+docker compose ps             # wait until status shows "healthy"
 ```
 
-Postgres is now running on `localhost:5432`. Connect with any SQL client (TablePlus, DBeaver, or psql):
+Migrations in `db/migrations/` run automatically on first startup.
 
-```
-Host:     localhost
-Port:     5432
-User:     poc_user
-Password: poc_password
-Database: poc_db
-```
-
----
-
-## 3. Run database migrations
-
-The `docker-compose.yml` automatically mounts `db/migrations/` into the Postgres container's init directory, so migrations run on first start.
-
-To re-run them manually (e.g. after wiping the volume):
+### 3. Load sample data
 
 ```bash
-# Using psql (if installed)
-for f in db/migrations/*.sql; do
-  echo "Running $f"
-  PGPASSWORD=poc_password psql -h localhost -U poc_user -d poc_db -f "$f"
-done
+cd app && npm install
+npx ts-node src/index.ts seed
+cd ..
 ```
+
+### 4. Launch the web app
+
+**Option A — Fully Dockerized (recommended)**
+```bash
+docker compose --profile web up --build
+```
+
+**Option B — Local dev mode (hot reload)**
+```bash
+./dev.sh
+```
+
+Then open:
+- **Dashboard UI** → http://localhost:3000
+- **REST API** → http://localhost:3001
+- **Swagger docs** → http://localhost:3001/docs
 
 ---
 
-## 4. Set up and run the TypeScript app
+## Using the TypeScript CLI
+
+The CLI is separate from the web app and useful for quick data exploration and scripting.
 
 ```bash
 cd app
-npm install
 
-# Ping the database
-npx ts-node src/index.ts ping
+npx ts-node src/index.ts ping                    # check DB connection
+npx ts-node src/index.ts tables                  # list all tables + row counts
+npx ts-node src/index.ts seed                    # load sample data
 
-# List all tables
-npx ts-node src/index.ts tables
+npx ts-node src/index.ts titanic list            # paginated passenger list
+npx ts-node src/index.ts titanic list --limit 5  # first 5 rows
+npx ts-node src/index.ts titanic summary         # survival rates by class & sex
 
-# Load the seed data (small sample rows)
-npx ts-node src/index.ts seed
+npx ts-node src/index.ts taxi list               # recent NYC taxi trips
+npx ts-node src/index.ts taxi list --min-fare 20 # trips with fare > $20
+npx ts-node src/index.ts taxi hourly             # hourly analytics view
 
-# Query Titanic data
-npx ts-node src/index.ts titanic list
-npx ts-node src/index.ts titanic list --limit 5
-npx ts-node src/index.ts titanic summary
-
-# Run a raw SQL query
 npx ts-node src/index.ts query "SELECT * FROM analytics.titanic_survival_summary"
 ```
 
+See [CLI Reference](docs/reference/cli.md) for all commands and options.
+
 ---
 
-## 5. Run the data pipelines (optional — requires Kaggle account)
+## Running the data pipelines
 
+Pipelines download real datasets from Kaggle and load them into Postgres.
+
+**Setup (one-time):**
 1. Create a Kaggle account at https://kaggle.com
 2. Go to Account → API → Create New Token → download `kaggle.json`
 3. Place it at `~/.kaggle/kaggle.json`
-4. Accept the dataset competition rules on Kaggle.com for both:
+4. Accept competition rules at:
    - https://www.kaggle.com/c/titanic
    - https://www.kaggle.com/c/new-york-city-taxi-fare-prediction
 
+**Run pipelines:**
 ```bash
-# From the repo root
+# Via Docker (recommended)
 docker compose --profile pipeline up pipeline_titanic
 docker compose --profile pipeline up pipeline_nyc_taxi
 
-# Or run locally with Python (faster for dev)
+# Or locally with Python
 cd pipelines
 pip install -r requirements.txt
-
-# Set DB host to localhost for local Python (not the Docker network)
-export POSTGRES_HOST=localhost
-python titanic/ingest.py
-python nyc_taxi/ingest.py
+POSTGRES_HOST=localhost python titanic/ingest.py
+POSTGRES_HOST=localhost python nyc_taxi/ingest.py
 ```
 
-Analysis charts are saved to `reports/`.
+Charts are saved to `reports/`. After running, reload the dashboard to see live data.
 
 ---
 
-## 6. Explore the analytics views
+## REST API endpoints
 
-```bash
-cd app
+The Fastify server exposes the following endpoints (all prefixed `/api`):
 
-# NYC Taxi hourly breakdown
-npx ts-node src/index.ts taxi hourly
+### Titanic
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/titanic` | List passengers (supports `limit`, `offset`, `pclass`, `survived`, `sex`) |
+| GET | `/api/titanic/:id` | Get single passenger |
+| GET | `/api/titanic/stats` | Aggregate stats (total, survivors, rate) |
+| GET | `/api/titanic/summary` | Survival breakdown from analytics view |
+| POST | `/api/titanic` | Create passenger |
+| PATCH | `/api/titanic/:id` | Update passenger |
+| DELETE | `/api/titanic/:id` | Delete passenger |
 
-# Titanic survival by class and sex
-npx ts-node src/index.ts titanic summary
-```
+### NYC Taxi
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/taxi` | List trips (supports `limit`, `offset`, `min_fare`, `max_fare`) |
+| GET | `/api/taxi/:id` | Get single trip |
+| GET | `/api/taxi/stats` | Aggregate stats |
+| GET | `/api/taxi/hourly` | Hourly aggregations from analytics view |
+| POST | `/api/taxi` | Create trip |
+| PATCH | `/api/taxi/:id` | Update trip |
+| DELETE | `/api/taxi/:id` | Delete trip |
+
+### Admin
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/admin/tables` | All tables with row counts and sizes |
+| GET | `/api/admin/tables/:schema/:table/columns` | Column metadata for a table |
+| GET | `/api/admin/db-info` | Postgres version, DB size, schemas |
+| POST | `/api/admin/query` | Run a safe read-only SELECT query |
+
+Full interactive docs at http://localhost:3001/docs (Swagger UI).
 
 ---
 
-## Useful Docker commands
+## Docker reference
 
 ```bash
+# Start Postgres only
+docker compose up -d postgres
+
+# Start the full web app (API + UI)
+docker compose --profile web up --build
+
+# Start a specific pipeline
+docker compose --profile pipeline up pipeline_titanic
+
 # View logs
+docker compose logs -f web_server
 docker compose logs -f postgres
 
-# Stop everything
+# Stop everything (data preserved)
 docker compose down
 
-# Wipe the database volume and start fresh
+# Stop and wipe data (fresh start)
 docker compose down -v
-docker compose up -d postgres
 ```
 
 ---
 
 ## Documentation
 
-Comprehensive documentation lives in the `docs/` folder. Start at **[docs/INDEX.md](./docs/INDEX.md)**.
+Full documentation lives in `docs/`. Start at **[docs/INDEX.md](./docs/INDEX.md)**.
 
 | I want to... | Document |
 |---|---|
 | Understand the system design | [Architecture Overview](docs/architecture/overview.md) |
+| Learn how the web app is structured | [Web App Guide](docs/guides/web-app.md) |
 | Learn how the database is structured | [Database Design](docs/architecture/database-design.md) |
-| Understand Docker usage | [Docker & Containers](docs/architecture/docker.md) |
+| Understand Docker and containers | [Docker & Containers](docs/architecture/docker.md) |
 | Learn how CI/CD works | [CI/CD Pipeline](docs/architecture/cicd.md) |
-| Add a new dataset | [Adding a Pipeline](docs/guides/adding-a-pipeline.md) |
+| Add a new dataset pipeline | [Adding a Pipeline](docs/guides/adding-a-pipeline.md) |
 | Write a database migration | [Migrations Guide](docs/guides/migrations.md) |
-| Work on the TypeScript app | [TypeScript App Guide](docs/guides/typescript-app.md) |
+| Work on the TypeScript CLI | [TypeScript App Guide](docs/guides/typescript-app.md) |
 | See all CLI commands | [CLI Reference](docs/reference/cli.md) |
+| Look up environment variables | [Environment Variables](docs/reference/environment-variables.md) |
 
-## Project structure
-
-See [CLAUDE.md](./CLAUDE.md) for AI assistant context, or [docs/reference/project-structure.md](docs/reference/project-structure.md) for the full annotated file tree.
+See [CLAUDE.md](./CLAUDE.md) for AI assistant context and conventions.
