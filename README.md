@@ -11,6 +11,9 @@ A proof-of-concept monorepo demonstrating a complete, locally-hostable data plat
 | Database | PostgreSQL 16 (Docker) | Stores all data; two schemas: `staging` and `analytics` |
 | Migrations | Raw SQL + shell loop | Versioned schema changes tracked in `db/migrations/` |
 | Pipelines | Python + pandas | Download Kaggle datasets, clean, and bulk-load into Postgres |
+| Orchestration | Airflow | Schedules ingestion, validation, dbt runs, retries, and backfills |
+| Transformations | dbt | Builds analytics views with lineage, tests, and docs |
+| Data Quality | Great Expectations | Validates staging data before downstream analytics build |
 | CLI App | TypeScript + Node 20 | Terminal interface to query and explore data |
 | Web API | Fastify (TypeScript) | REST API with full CRUD + Swagger docs |
 | Web UI | React + Vite | Dashboard with charts, data tables, CRUD modals, admin panel |
@@ -127,6 +130,34 @@ POSTGRES_HOST=localhost python nyc_taxi/ingest.py
 ```
 
 Charts are saved to `reports/`. After running, reload the dashboard to see live data.
+
+---
+
+## Running orchestration, dbt, and data quality
+
+Start Airflow:
+
+```bash
+docker compose --profile orchestration up --build
+```
+
+Then open Airflow at http://localhost:8080 and trigger the `data_platform_batch` DAG.
+
+Run dbt directly:
+
+```bash
+docker compose --profile transform run --rm dbt run --profiles-dir .
+docker compose --profile transform run --rm dbt test --profiles-dir .
+```
+
+Run Great Expectations directly:
+
+```bash
+docker compose --profile quality run --rm great_expectations \
+  python orchestration/great_expectations/validate.py titanic_staging
+```
+
+See [Orchestration Guide](docs/guides/orchestration.md) for the full workflow.
 
 ---
 
