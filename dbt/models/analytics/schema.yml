@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: titanic_survival_summary
+    description: Survival rates by passenger class and sex.
+    columns:
+      - name: pclass
+        tests:
+          - not_null
+      - name: sex
+        tests:
+          - not_null
+      - name: total_passengers
+        tests:
+          - not_null
+      - name: survival_rate_pct
+        tests:
+          - not_null
+  - name: nyc_taxi_hourly
+    description: Hourly trip, fare, and passenger aggregates for taxi trips.
+    columns:
+      - name: hour
+        tests:
+          - not_null
+          - unique
+      - name: total_trips
+        tests:
+          - not_null
+      - name: avg_fare_usd
+        tests:
+          - not_null

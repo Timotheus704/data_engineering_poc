@@ -1,0 +1,47 @@
+version: 2
+
+sources:
+  - name: staging
+    description: Raw ingested tables loaded by Python pipelines.
+    schema: staging
+    tables:
+      - name: titanic
+        description: Passenger records from the Kaggle Titanic competition.
+        loaded_at_field: loaded_at
+        columns:
+          - name: id
+            tests:
+              - not_null
+              - unique
+          - name: passenger_id
+            tests:
+              - not_null
+          - name: survived
+            tests:
+              - accepted_values:
+                  values: [0, 1]
+                  quote: false
+          - name: pclass
+            tests:
+              - accepted_values:
+                  values: [1, 2, 3]
+                  quote: false
+      - name: nyc_taxi
+        description: NYC taxi trip sample loaded from Kaggle.
+        loaded_at_field: loaded_at
+        columns:
+          - name: id
+            tests:
+              - not_null
+              - unique
+          - name: pickup_datetime
+            tests:
+              - not_null
+          - name: passenger_count
+            tests:
+              - accepted_values:
+                  values: [1, 2, 3, 4, 5, 6]
+                  quote: false
+          - name: fare_amount
+            tests:
+              - not_null
