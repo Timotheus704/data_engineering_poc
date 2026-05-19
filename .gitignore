@@ -37,3 +37,10 @@ Thumbs.db
 # Reports output
 reports/*.png
 reports/*.html
+
+# Orchestration/generated artifacts
+orchestration/airflow/logs/
+orchestration/great_expectations/uncommitted/
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
