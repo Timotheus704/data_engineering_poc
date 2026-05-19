@@ -48,6 +48,20 @@ Use `rg` for searches. Avoid slow broad scans through dependency/build directori
 
 ---
 
+## What this repo is
+
+A proof-of-concept monorepo demonstrating a complete, locally-hostable data platform:
+
+- **Postgres** running in Docker with schema migrations via numbered SQL scripts
+- **CI/CD** via GitHub Actions for DDL/DML deployment and TypeScript build checks
+- **Python data pipelines** that pull from Kaggle and load into Postgres
+- **TypeScript CLI** (`app/`) for terminal-based data exploration
+- **Fastify REST API** (`web/server/`) with full CRUD endpoints and Swagger docs
+- **React dashboard** (`web/client/`) with charts, paginated tables, CRUD modals, and an admin SQL panel
+- **Data analysis layer** with analytics views in Postgres
+
+---
+
 ## Repo Map
 
 ```text
