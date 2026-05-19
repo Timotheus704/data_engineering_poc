@@ -12,6 +12,7 @@ Core signal:
 
 - Postgres in Docker with ordered SQL migrations
 - Python ingestion pipelines for Kaggle datasets
+- Incremental loading with persisted watermarks for timestamped datasets
 - Airflow orchestration with retries, backfills, SLA callback, and run metadata
 - Great Expectations data quality gates before downstream transforms
 - dbt transformation layer with sources, refs, tests, and docs
@@ -119,6 +120,7 @@ docker compose --profile pipeline up pipeline_nyc_taxi
 cd pipelines
 POSTGRES_HOST=localhost python titanic/ingest.py
 POSTGRES_HOST=localhost python nyc_taxi/ingest.py
+POSTGRES_HOST=localhost python nyc_taxi/ingest.py --mode incremental
 ```
 
 Airflow/dbt/quality:
@@ -180,6 +182,7 @@ done
 - Raw ingested data belongs in `staging`.
 - dbt-owned transformed objects belong in `analytics` or dbt staging schemas.
 - Operational metadata belongs in `orchestration`.
+- Incremental state belongs in `orchestration.pipeline_watermarks`.
 - Tables should include `loaded_at TIMESTAMPTZ DEFAULT NOW()` when they store loaded data.
 - Admin query surfaces must stay read-only. Do not allow non-SELECT SQL through `runRawQuery()` or `/api/admin/query`.
 
@@ -212,7 +215,8 @@ done
 - One dataset per folder under `pipelines/`.
 - Use `pipelines/db.py:get_engine()` for all database access.
 - Never hardcode credentials.
-- Current ingestion is full-refresh with `TRUNCATE`; if implementing incremental loading, introduce explicit watermarks and document the tradeoff.
+- Timestamped datasets should support incremental loading with explicit watermarks and idempotent writes.
+- Keep full-refresh mode available for local resets and reproducible demos.
 - Keep cleaning logic close to ingestion unless it is a true transformation, in which case prefer dbt.
 
 ### TypeScript CLI and API

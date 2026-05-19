@@ -16,6 +16,16 @@
       "meta": {}
     },
     {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "source_row_hash" },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": { "column": "source_row_hash" },
+      "meta": {}
+    },
+    {
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": { "column": "passenger_count", "min_value": 1, "max_value": 6 },
       "meta": {}

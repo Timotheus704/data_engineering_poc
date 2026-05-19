@@ -1,9 +1,11 @@
-pandas==2.2.2
-sqlalchemy==2.0.30
+pandas==2.1.4
+sqlalchemy==1.4.52
 psycopg2-binary==2.9.9
 python-dotenv==1.0.1
 kaggle==1.6.14
 matplotlib==3.9.0
 seaborn==0.13.2
+dbt-core==1.8.2
 dbt-postgres==1.8.2
 great-expectations==0.18.21
+protobuf==4.25.3

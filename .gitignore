@@ -41,6 +41,9 @@ reports/*.html
 # Orchestration/generated artifacts
 orchestration/airflow/logs/
 orchestration/great_expectations/uncommitted/
+orchestration/gx/
+**/.ge_store_backend_id
+dbt/.user.yml
 dbt/target/
 dbt/dbt_packages/
 dbt/logs/

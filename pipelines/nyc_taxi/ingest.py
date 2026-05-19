@@ -2,19 +2,34 @@
 NYC Taxi pipeline: download from Kaggle → clean → load into staging.nyc_taxi
 Run: python nyc_taxi/ingest.py
 """
+import argparse
+import os
 import sys
 import subprocess
+from uuid import uuid4
 import pandas as pd
 from pathlib import Path
+from sqlalchemy import text
 from db import get_engine
+from metadata import get_watermark, update_watermark
 
 DATASET  = "new-york-city-taxi-fare-prediction"
 DATA_DIR = Path(__file__).parent / "data"
 CSV_FILE = DATA_DIR / "train.csv"
 TABLE    = "nyc_taxi"
 SCHEMA   = "staging"
+DATASET_NAME = "nyc_taxi"
+WATERMARK_COLUMN = "pickup_datetime"
 # Limit rows for PoC — full dataset is 55M rows
 SAMPLE_ROWS = 50_000
+INGEST_COLUMNS = [
+    "vendor_id", "pickup_datetime", "dropoff_datetime",
+    "passenger_count", "trip_distance", "pickup_longitude",
+    "pickup_latitude", "rate_code_id", "store_and_fwd_flag",
+    "dropoff_longitude", "dropoff_latitude", "payment_type",
+    "fare_amount", "extra", "mta_tax", "tip_amount",
+    "tolls_amount", "total_amount", "source_row_hash",
+]
 
 
 def download_data() -> None:
@@ -73,16 +88,105 @@ def load_and_clean() -> pd.DataFrame:
         "tolls_amount", "total_amount",
     ]
     df = df[[c for c in keep if c in df.columns]]
+    for column in [c for c in INGEST_COLUMNS if c != "source_row_hash"]:
+        if column not in df.columns:
+            df[column] = None
+    df = df[[c for c in INGEST_COLUMNS if c != "source_row_hash"]]
+    df["source_row_hash"] = pd.util.hash_pandas_object(df, index=False).astype(str)
     print(f"[nyc_taxi] Cleaned dataset: {len(df):,} rows")
     return df
 
 
-def ingest(df: pd.DataFrame) -> None:
+def filter_incremental(df: pd.DataFrame) -> pd.DataFrame:
+    engine = get_engine()
+    watermark = get_watermark(engine, DATASET_NAME)
+    if watermark is None:
+        print("[nyc_taxi] No existing watermark; incremental run will load all cleaned rows.")
+        return df
+
+    incremental_df = df[df[WATERMARK_COLUMN] > watermark].copy()
+    print(
+        "[nyc_taxi] Incremental watermark "
+        f"{watermark.isoformat()} retained {len(incremental_df):,} of {len(df):,} cleaned rows"
+    )
+    return incremental_df
+
+
+def ingest_full_refresh(df: pd.DataFrame) -> int:
     engine = get_engine()
     with engine.begin() as conn:
         conn.exec_driver_sql(f"TRUNCATE {SCHEMA}.{TABLE} RESTART IDENTITY")
-    df.to_sql(TABLE, engine, schema=SCHEMA, if_exists="append", index=False, method="multi", chunksize=1000)
+    df[INGEST_COLUMNS].to_sql(TABLE, engine, schema=SCHEMA, if_exists="append", index=False, method="multi", chunksize=1000)
     print(f"[nyc_taxi] Inserted {len(df):,} rows into {SCHEMA}.{TABLE}")
+    return len(df)
+
+
+def ingest_incremental(df: pd.DataFrame) -> int:
+    if df.empty:
+        print("[nyc_taxi] No rows are newer than the current watermark.")
+        return 0
+
+    engine = get_engine()
+    temp_table = f"nyc_taxi_load_{uuid4().hex}"
+    temp_schema = "orchestration"
+    target_columns = ", ".join(INGEST_COLUMNS)
+    update_columns = [column for column in INGEST_COLUMNS if column != "source_row_hash"]
+    update_assignments = ", ".join(
+        f"{column} = EXCLUDED.{column}" for column in update_columns
+    )
+
+    try:
+        df[INGEST_COLUMNS].to_sql(
+            temp_table,
+            engine,
+            schema=temp_schema,
+            if_exists="fail",
+            index=False,
+            method="multi",
+            chunksize=1000,
+        )
+
+        with engine.begin() as conn:
+            result = conn.execute(
+                text(
+                    f"""
+                    INSERT INTO {SCHEMA}.{TABLE} ({target_columns})
+                    SELECT {target_columns}
+                    FROM {temp_schema}.{temp_table}
+                    ON CONFLICT (source_row_hash)
+                    DO UPDATE SET {update_assignments}
+                    """
+                )
+            )
+        rows_loaded = result.rowcount if result.rowcount is not None else len(df)
+    finally:
+        with engine.begin() as conn:
+            conn.execute(text(f"DROP TABLE IF EXISTS {temp_schema}.{temp_table}"))
+
+    print(f"[nyc_taxi] Upserted {rows_loaded:,} rows into {SCHEMA}.{TABLE}")
+    return rows_loaded
+
+
+def ingest(df: pd.DataFrame, mode: str) -> int:
+    if mode == "incremental":
+        filtered_df = filter_incremental(df)
+        rows_loaded = ingest_incremental(filtered_df)
+    else:
+        filtered_df = df
+        rows_loaded = ingest_full_refresh(filtered_df)
+
+    if not filtered_df.empty:
+        watermark = filtered_df[WATERMARK_COLUMN].max()
+        update_watermark(
+            get_engine(),
+            DATASET_NAME,
+            watermark.to_pydatetime(),
+            rows_loaded,
+            os.getenv("AIRFLOW_RUN_ID", "manual"),
+        )
+        print(f"[nyc_taxi] Updated watermark to {watermark.isoformat()}")
+
+    return rows_loaded
 
 
 def run_analysis(df: pd.DataFrame) -> None:
@@ -107,9 +211,21 @@ def run_analysis(df: pd.DataFrame) -> None:
     print(f"[nyc_taxi] Saved chart to {out}")
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Ingest NYC taxi data into Postgres.")
+    parser.add_argument(
+        "--mode",
+        choices=["full-refresh", "incremental"],
+        default=os.getenv("INGEST_MODE", "full-refresh"),
+        help="Load strategy. Defaults to INGEST_MODE or full-refresh.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
     download_data()
     df = load_and_clean()
-    ingest(df)
+    rows = ingest(df, args.mode)
     run_analysis(df)
-    print("[nyc_taxi] Pipeline complete ✅")
+    print(f"[nyc_taxi] Pipeline complete: mode={args.mode}, rows_loaded={rows:,}")

@@ -127,9 +127,12 @@ cd pipelines
 pip install -r requirements.txt
 POSTGRES_HOST=localhost python titanic/ingest.py
 POSTGRES_HOST=localhost python nyc_taxi/ingest.py
+POSTGRES_HOST=localhost python nyc_taxi/ingest.py --mode incremental
 ```
 
 Charts are saved to `reports/`. After running, reload the dashboard to see live data.
+
+The NYC Taxi pipeline supports incremental loading with persisted watermarks in `orchestration.pipeline_watermarks`; Airflow uses incremental mode by default.
 
 ---
 

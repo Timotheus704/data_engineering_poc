@@ -18,5 +18,6 @@ SELECT
   tip_amount,
   tolls_amount,
   total_amount,
+  source_row_hash,
   loaded_at
 FROM {{ source('staging', 'nyc_taxi') }}

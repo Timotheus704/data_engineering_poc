@@ -5,27 +5,27 @@ models:
     description: Survival rates by passenger class and sex.
     columns:
       - name: pclass
-        tests:
+        data_tests:
           - not_null
       - name: sex
-        tests:
+        data_tests:
           - not_null
       - name: total_passengers
-        tests:
+        data_tests:
           - not_null
       - name: survival_rate_pct
-        tests:
+        data_tests:
           - not_null
   - name: nyc_taxi_hourly
     description: Hourly trip, fare, and passenger aggregates for taxi trips.
     columns:
       - name: hour
-        tests:
+        data_tests:
           - not_null
           - unique
       - name: total_trips
-        tests:
+        data_tests:
           - not_null
       - name: avg_fare_usd
-        tests:
+        data_tests:
           - not_null

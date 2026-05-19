@@ -17,6 +17,8 @@ Python ingestion scripts
 
 Airflow runs this as the `data_platform_batch` DAG.
 
+The NYC Taxi ingestion path supports both full-refresh and incremental modes. Airflow uses incremental mode so repeated runs only process rows newer than the last successful `pickup_datetime` watermark.
+
 ---
 
 ## Start Airflow
@@ -65,6 +67,14 @@ FROM orchestration.latest_pipeline_runs
 ORDER BY started_at DESC;
 ```
 
+To inspect incremental state:
+
+```sql
+SELECT *
+FROM orchestration.pipeline_watermarks
+ORDER BY updated_at DESC;
+```
+
 ---
 
 ## Run dbt Directly
@@ -110,14 +120,31 @@ The validation script exits non-zero when expectations fail, which means the Air
 
 ---
 
+## Incremental Loading
+
+The NYC Taxi pipeline accepts a load mode:
+
+```bash
+cd pipelines
+POSTGRES_HOST=localhost python nyc_taxi/ingest.py --mode full-refresh
+POSTGRES_HOST=localhost python nyc_taxi/ingest.py --mode incremental
+```
+
+Full refresh truncates and reloads `staging.nyc_taxi`. Incremental mode reads the latest `pickup_datetime` from `orchestration.pipeline_watermarks`, filters out older rows, and upserts by `source_row_hash`.
+
+This keeps the original PoC simple while demonstrating the production pattern: persisted watermarks, idempotent merges, and reruns that do not duplicate data.
+
+---
+
 ## What This Demonstrates
 
 This scaffold is meant to show senior data engineering instincts:
 
 - Pipelines are scheduled and backfillable, not just executable scripts.
 - Bad staging data blocks downstream transformations.
+- Incremental loading has explicit watermark state and idempotent upserts.
 - Transformations have lineage through `ref()` and `source()`.
 - dbt tests document model contracts.
 - Operational metadata is queryable from Postgres.
 
-Next high-impact extensions would be incremental loading with watermarks and dashboard surfacing for `orchestration.pipeline_runs`.
+Next high-impact extensions would be dashboard surfacing for `orchestration.pipeline_runs` and `orchestration.pipeline_watermarks`.

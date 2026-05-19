@@ -123,7 +123,8 @@ with DAG(
 
     ingest_nyc_taxi = BashOperator(
         task_id="ingest_nyc_taxi",
-        bash_command=f"cd {PIPELINES_DIR} && python nyc_taxi/ingest.py",
+        bash_command=f"cd {PIPELINES_DIR} && python nyc_taxi/ingest.py --mode incremental",
+        env={"AIRFLOW_RUN_ID": "{{ run_id }}"},
     )
 
     validate_titanic = BashOperator(
