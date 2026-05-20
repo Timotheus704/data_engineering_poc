@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
+import { taxiCreateSchema, taxiUpdateSchema } from '../schemas/nyc_taxi';
+import type { TaxiCreate, TaxiUpdate } from '../schemas/nyc_taxi';
 
 interface TaxiRow {
   id: number;
