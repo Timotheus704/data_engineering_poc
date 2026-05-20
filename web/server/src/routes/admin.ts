@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
 import { adminQuerySchema, adminTableParamsSchema } from '../schemas/admin';
+import { zodToJsonSchema } from '../utils/zod-to-json-schema';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
@@ -26,11 +27,9 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Params: { schema: string; table: string } }>(
     '/admin/tables/:schema/:table/columns',
     async (req, reply) => {
-      // Validate params at runtime
       const parsed = adminTableParamsSchema.safeParse(req.params as any);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
       const { schema, table } = parsed.data;
-
       const rows = await query(`
         SELECT
           column_name,

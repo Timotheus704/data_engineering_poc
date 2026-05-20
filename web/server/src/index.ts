@@ -4,6 +4,11 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import * as dotenv from 'dotenv';
 
+import { zodToJsonSchema } from './utils/zod-to-json-schema';
+import { titanicCreateSchema } from './schemas/titanic';
+import { taxiCreateSchema } from './schemas/nyc_taxi';
+import { adminQuerySchema } from './schemas/admin';
+
 import healthRoutes from './routes/health';
 import titanicRoutes from './routes/titanic';
 import taxiRoutes from './routes/nyc_taxi';
@@ -31,10 +36,17 @@ async function build() {
   });
 
   // ── Swagger / OpenAPI ─────────────────────────────────────────────────────
+  const componentsSchemas: Record<string, any> = {
+    TitanicCreate: zodToJsonSchema(titanicCreateSchema),
+    TaxiCreate: zodToJsonSchema(taxiCreateSchema),
+    AdminQuery: zodToJsonSchema(adminQuerySchema),
+  };
+
   await fastify.register(swagger, {
     openapi: {
       info: { title: 'PoC Data API', version: '1.0.0', description: 'REST API for the PoC data platform' },
       servers: [{ url: `http://localhost:${PORT}` }],
+      components: { schemas: componentsSchemas },
     },
   });
   await fastify.register(swaggerUi, {

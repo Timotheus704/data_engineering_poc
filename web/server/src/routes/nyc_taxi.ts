@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
 import { taxiCreateSchema, taxiUpdateSchema } from '../schemas/nyc_taxi';
+import { zodToJsonSchema } from '../utils/zod-to-json-schema';
 import type { TaxiCreate, TaxiUpdate } from '../schemas/nyc_taxi';
 
 interface TaxiRow {
@@ -82,49 +83,56 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // POST /api/taxi
-  fastify.post<{ Body: CreateBody }>('/taxi', async (req, reply) => {
-    const parsed = taxiCreateSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-    const b = parsed.data;
-    const rows = await query<TaxiRow>(`
-      INSERT INTO staging.nyc_taxi
-        (vendor_id, pickup_datetime, dropoff_datetime, passenger_count, trip_distance,
-         pickup_longitude, pickup_latitude, rate_code_id, store_and_fwd_flag,
-         dropoff_longitude, dropoff_latitude, payment_type, fare_amount, extra,
-         mta_tax, tip_amount, tolls_amount, total_amount)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
-      RETURNING id, vendor_id, pickup_datetime, dropoff_datetime, passenger_count,
-                trip_distance, fare_amount, tip_amount, total_amount, loaded_at`,
-      [b.vendor_id ?? null, b.pickup_datetime ?? null, b.dropoff_datetime ?? null,
-       b.passenger_count ?? null, b.trip_distance ?? null, b.pickup_longitude ?? null,
-       b.pickup_latitude ?? null, b.rate_code_id ?? null, b.store_and_fwd_flag ?? null,
-       b.dropoff_longitude ?? null, b.dropoff_latitude ?? null, b.payment_type ?? null,
-       b.fare_amount ?? null, b.extra ?? null, b.mta_tax ?? null,
-       b.tip_amount ?? null, b.tolls_amount ?? null, b.total_amount ?? null]
-    );
-    return reply.status(201).send({ data: rows[0] });
-  });
+  fastify.post<{ Body: CreateBody }>(
+    '/taxi',
+    { schema: { body: zodToJsonSchema(taxiCreateSchema) } },
+    async (req, reply) => {
+      const parsed = taxiCreateSchema.safeParse(req.body);
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+      const b = parsed.data;
+      const rows = await query<TaxiRow>(`
+        INSERT INTO staging.nyc_taxi
+          (vendor_id, pickup_datetime, dropoff_datetime, passenger_count, trip_distance,
+           pickup_longitude, pickup_latitude, rate_code_id, store_and_fwd_flag,
+           dropoff_longitude, dropoff_latitude, payment_type, fare_amount, extra,
+           mta_tax, tip_amount, tolls_amount, total_amount)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        RETURNING id, vendor_id, pickup_datetime, dropoff_datetime, passenger_count,
+                  trip_distance, fare_amount, tip_amount, total_amount, loaded_at`,
+        [b.vendor_id ?? null, b.pickup_datetime ?? null, b.dropoff_datetime ?? null,
+         b.passenger_count ?? null, b.trip_distance ?? null, b.pickup_longitude ?? null,
+         b.pickup_latitude ?? null, b.rate_code_id ?? null, b.store_and_fwd_flag ?? null,
+         b.dropoff_longitude ?? null, b.dropoff_latitude ?? null, b.payment_type ?? null,
+         b.fare_amount ?? null, b.extra ?? null, b.mta_tax ?? null,
+         b.tip_amount ?? null, b.tolls_amount ?? null, b.total_amount ?? null]
+      );
+      return reply.status(201).send({ data: rows[0] });
+    }
+  );
 
   // PATCH /api/taxi/:id
-  fastify.patch<{ Params: IdParam; Body: UpdateBody }>('/taxi/:id', async (req, reply) => {
-    const existing = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
-    if (!existing.length) return reply.status(404).send({ error: 'Trip not found' });
+  fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
+    '/taxi/:id',
+    { schema: { body: zodToJsonSchema(taxiUpdateSchema) } },
+    async (req, reply) => {
+      const parsed = taxiUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+      const existing = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
+      if (!existing.length) return reply.status(404).send({ error: 'Trip not found' });
 
-    const parsed = taxiUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-
-    const b = { ...existing[0], ...parsed.data };
-    const rows = await query<TaxiRow>(`
-      UPDATE staging.nyc_taxi
-      SET vendor_id=$1, pickup_datetime=$2, dropoff_datetime=$3, passenger_count=$4,
-          trip_distance=$5, fare_amount=$6, tip_amount=$7, total_amount=$8, payment_type=$9
-      WHERE id=$10 RETURNING id, vendor_id, pickup_datetime, dropoff_datetime,
-            passenger_count, trip_distance, fare_amount, tip_amount, total_amount, loaded_at`,
-      [b.vendor_id, b.pickup_datetime, b.dropoff_datetime, b.passenger_count,
-       b.trip_distance, b.fare_amount, b.tip_amount, b.total_amount, b.payment_type, req.params.id]
-    );
-    return reply.send({ data: rows[0] });
-  });
+      const b = { ...existing[0], ...parsed.data };
+      const rows = await query<TaxiRow>(`
+        UPDATE staging.nyc_taxi
+        SET vendor_id=$1, pickup_datetime=$2, dropoff_datetime=$3, passenger_count=$4,
+            trip_distance=$5, fare_amount=$6, tip_amount=$7, total_amount=$8, payment_type=$9
+        WHERE id=$10 RETURNING id, vendor_id, pickup_datetime, dropoff_datetime,
+              passenger_count, trip_distance, fare_amount, tip_amount, total_amount, loaded_at`,
+        [b.vendor_id, b.pickup_datetime, b.dropoff_datetime, b.passenger_count,
+         b.trip_distance, b.fare_amount, b.tip_amount, b.total_amount, b.payment_type, req.params.id]
+      );
+      return reply.send({ data: rows[0] });
+    }
+  );
 
   // DELETE /api/taxi/:id
   fastify.delete<{ Params: IdParam }>('/taxi/:id', async (req, reply) => {
