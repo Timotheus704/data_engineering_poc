@@ -16,5 +16,8 @@ export const titanicCreateSchema = z.object({
 
 export const titanicUpdateSchema = titanicCreateSchema.partial();
 
+export const titanicBulkDeleteSchema = z.object({ ids: z.array(z.number().int()).nonempty() });
+
 export type TitanicCreate = z.infer<typeof titanicCreateSchema>;
 export type TitanicUpdate = z.infer<typeof titanicUpdateSchema>;
+export type TitanicBulkDelete = z.infer<typeof titanicBulkDeleteSchema>;

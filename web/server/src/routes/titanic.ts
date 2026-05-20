@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query, withTransaction } from '../db';
-import { titanicCreateSchema, titanicUpdateSchema } from '../schemas/titanic';
+import { titanicCreateSchema, titanicUpdateSchema, titanicBulkDeleteSchema } from '../schemas/titanic';
 import type { TitanicCreate, TitanicUpdate } from '../schemas/titanic';
 
 interface TitanicRow {
@@ -86,43 +86,40 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // POST /api/titanic — create
-  fastify.post<{ Body: CreateBody }>(
-    '/titanic',
-    { schema: { body: titanicCreateSchema } },
-    async (req, reply) => {
-      const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = req.body;
+  fastify.post<{ Body: CreateBody }>('/titanic', async (req, reply) => {
+    const parsed = titanicCreateSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+    const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = parsed.data;
 
-      const rows = await query<TitanicRow>(`
-        INSERT INTO staging.titanic (survived, pclass, name, sex, age, sib_sp, parch, ticket, fare, cabin, embarked)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-        RETURNING *`,
-        [survived, pclass, name, sex, age ?? null, sib_sp, parch, ticket, fare, cabin ?? null, embarked ?? null]
-      );
-      return reply.status(201).send({ data: rows[0] });
-    }
-  );
+    const rows = await query<TitanicRow>(`
+      INSERT INTO staging.titanic (survived, pclass, name, sex, age, sib_sp, parch, ticket, fare, cabin, embarked)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING *`,
+      [survived, pclass, name, sex, age ?? null, sib_sp, parch, ticket, fare, cabin ?? null, embarked ?? null]
+    );
+    return reply.status(201).send({ data: rows[0] });
+  });
 
   // PATCH /api/titanic/:id — partial update
-  fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
-    '/titanic/:id',
-    { schema: { body: titanicUpdateSchema } },
-    async (req, reply) => {
-      const existing = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
-      if (!existing.length) return reply.status(404).send({ error: 'Passenger not found' });
+  fastify.patch<{ Params: IdParam; Body: UpdateBody }>('/titanic/:id', async (req, reply) => {
+    const existing = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
+    if (!existing.length) return reply.status(404).send({ error: 'Passenger not found' });
 
-      const merged = { ...existing[0], ...req.body };
-      const rows = await query<TitanicRow>(`
-        UPDATE staging.titanic
-        SET survived=$1, pclass=$2, name=$3, sex=$4, age=$5,
-            sib_sp=$6, parch=$7, ticket=$8, fare=$9, cabin=$10, embarked=$11
-        WHERE id=$12 RETURNING *`,
-        [merged.survived, merged.pclass, merged.name, merged.sex, merged.age,
-         merged.sib_sp, merged.parch, merged.ticket, merged.fare, merged.cabin,
-         merged.embarked, req.params.id]
-      );
-      return reply.send({ data: rows[0] });
-    }
-  );
+    const parsed = titanicUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+
+    const merged = { ...existing[0], ...parsed.data };
+    const rows = await query<TitanicRow>(`
+      UPDATE staging.titanic
+      SET survived=$1, pclass=$2, name=$3, sex=$4, age=$5,
+          sib_sp=$6, parch=$7, ticket=$8, fare=$9, cabin=$10, embarked=$11
+      WHERE id=$12 RETURNING *`,
+      [merged.survived, merged.pclass, merged.name, merged.sex, merged.age,
+       merged.sib_sp, merged.parch, merged.ticket, merged.fare, merged.cabin,
+       merged.embarked, req.params.id]
+    );
+    return reply.send({ data: rows[0] });
+  });
 
   // DELETE /api/titanic/:id
   fastify.delete<{ Params: IdParam }>('/titanic/:id', async (req, reply) => {
@@ -133,7 +130,9 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
 
   // DELETE /api/titanic — bulk delete by ids
   fastify.delete<{ Body: { ids: number[] } }>('/titanic', async (req, reply) => {
-    const { ids } = req.body ?? {};
+    const parsed = titanicBulkDeleteSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+    const { ids } = parsed.data;
     if (!ids?.length) return reply.status(400).send({ error: 'ids array required' });
     const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
     const rows = await query(`DELETE FROM staging.titanic WHERE id IN (${placeholders}) RETURNING id`, ids);

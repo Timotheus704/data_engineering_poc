@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
+import { adminQuerySchema, adminTableParamsSchema } from '../schemas/admin';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
@@ -22,28 +23,35 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/admin/tables/:schema/:table/columns
-  fastify.get<{ Params: { schema: string; table: string } }>('/admin/tables/:schema/:table/columns', async (req, reply) => {
-    const { schema, table } = req.params;
-    if (!['staging','analytics'].includes(schema)) {
-      return reply.status(400).send({ error: 'Invalid schema' });
+  fastify.get<{ Params: { schema: string; table: string } }>(
+    '/admin/tables/:schema/:table/columns',
+    async (req, reply) => {
+      // Validate params at runtime
+      const parsed = adminTableParamsSchema.safeParse(req.params as any);
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+      const { schema, table } = parsed.data;
+
+      const rows = await query(`
+        SELECT
+          column_name,
+          data_type,
+          is_nullable,
+          column_default
+        FROM information_schema.columns
+        WHERE table_schema = $1 AND table_name = $2
+        ORDER BY ordinal_position`,
+        [schema, table]
+      );
+      return reply.send({ data: rows });
     }
-    const rows = await query(`
-      SELECT
-        column_name,
-        data_type,
-        is_nullable,
-        column_default
-      FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = $2
-      ORDER BY ordinal_position`,
-      [schema, table]
-    );
-    return reply.send({ data: rows });
-  });
+  );
 
   // POST /api/admin/query — safe raw SELECT
   fastify.post<{ Body: { sql: string } }>('/admin/query', async (req, reply) => {
-    const { sql } = req.body ?? {};
+    const parsed = adminQuerySchema.safeParse(req.body ?? {});
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+    const { sql } = parsed.data;
+
     if (!sql) return reply.status(400).send({ error: 'sql is required' });
     const trimmed = sql.trim().toUpperCase();
     if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('WITH')) {
