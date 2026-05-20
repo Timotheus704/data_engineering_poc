@@ -16,8 +16,9 @@ interface TaxiRow {
 }
 
 interface ListQuery { limit?: number; offset?: number; min_fare?: number; max_fare?: number; min_passengers?: number; }
-interface CreateBody { vendor_id?: number; pickup_datetime?: string; dropoff_datetime?: string; passenger_count?: number; trip_distance?: number; fare_amount?: number; tip_amount?: number; tolls_amount?: number; mta_tax?: number; extra?: number; total_amount?: number; payment_type?: number; rate_code_id?: number; store_and_fwd_flag?: string; pickup_longitude?: number; pickup_latitude?: number; dropoff_longitude?: number; dropoff_latitude?: number; }
-interface IdParam { id: string; }
+type CreateBody = TaxiCreate;
+type IdParam = { id: string };
+type UpdateBody = TaxiUpdate;
 
 const taxiRoutes: FastifyPluginAsync = async (fastify) => {
 
@@ -80,7 +81,9 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/taxi
   fastify.post<{ Body: CreateBody }>('/taxi', async (req, reply) => {
-    const b = req.body;
+    const parsed = taxiCreateSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+    const b = parsed.data;
     const rows = await query<TaxiRow>(`
       INSERT INTO staging.nyc_taxi
         (vendor_id, pickup_datetime, dropoff_datetime, passenger_count, trip_distance,
@@ -101,10 +104,14 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // PATCH /api/taxi/:id
-  fastify.patch<{ Params: IdParam; Body: Partial<CreateBody> }>('/taxi/:id', async (req, reply) => {
+  fastify.patch<{ Params: IdParam; Body: UpdateBody }>('/taxi/:id', async (req, reply) => {
     const existing = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
     if (!existing.length) return reply.status(404).send({ error: 'Trip not found' });
-    const b = { ...existing[0], ...req.body };
+
+    const parsed = taxiUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+
+    const b = { ...existing[0], ...parsed.data };
     const rows = await query<TaxiRow>(`
       UPDATE staging.nyc_taxi
       SET vendor_id=$1, pickup_datetime=$2, dropoff_datetime=$3, passenger_count=$4,
