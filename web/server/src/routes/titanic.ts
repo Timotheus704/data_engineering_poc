@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query, withTransaction } from '../db';
+import { titanicCreateSchema, titanicUpdateSchema } from '../schemas/titanic';
+import type { TitanicCreate, TitanicUpdate } from '../schemas/titanic';
 
 interface TitanicRow {
   id: number;
@@ -19,8 +21,8 @@ interface TitanicRow {
 }
 
 interface ListQuery { limit?: number; offset?: number; pclass?: number; survived?: number; sex?: string; }
-interface CreateBody { survived: number; pclass: number; name: string; sex: string; age?: number; sib_sp?: number; parch?: number; ticket?: string; fare?: number; cabin?: string; embarked?: string; }
-interface UpdateBody { survived?: number; pclass?: number; name?: string; sex?: string; age?: number | null; sib_sp?: number; parch?: number; ticket?: string; fare?: number; cabin?: string | null; embarked?: string | null; }
+type CreateBody = TitanicCreate;
+type UpdateBody = TitanicUpdate;
 interface IdParam { id: string; }
 
 const titanicRoutes: FastifyPluginAsync = async (fastify) => {
@@ -85,10 +87,10 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/titanic — create
   fastify.post<{ Body: CreateBody }>('/titanic', async (req, reply) => {
-    const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = req.body;
-    if (survived === undefined || !pclass || !name || !sex) {
-      return reply.status(400).send({ error: 'survived, pclass, name, and sex are required' });
-    }
+    const parsed = titanicCreateSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+    const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = parsed.data;
+
     const rows = await query<TitanicRow>(`
       INSERT INTO staging.titanic (survived, pclass, name, sex, age, sib_sp, parch, ticket, fare, cabin, embarked)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
