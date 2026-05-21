@@ -79,7 +79,7 @@ docker compose --profile web up --build
 
 Then open:
 - **Dashboard UI** → http://localhost:3000
-- **REST API** → http://localhost:3001
+- **REST API (Data)** → http://localhost:3001/api/titanic
 - **Swagger docs** → http://localhost:3001/docs
 
 ---

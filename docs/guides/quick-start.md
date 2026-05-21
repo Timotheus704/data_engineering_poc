@@ -8,7 +8,7 @@ Get the full stack running on your Mac in under 10 minutes. No prior experience 
 
 - PostgreSQL running in Docker with schema and sample data loaded
 - A React dashboard at http://localhost:3000
-- A REST API at http://localhost:3001 with Swagger docs
+- A REST API at http://localhost:3001/api with Swagger docs
 - The TypeScript CLI working for terminal-based data exploration
 
 ---
@@ -99,7 +99,7 @@ This runs Postgres in Docker and the API + React app on your Mac with instant ho
 
 Then open:
 - **Dashboard** → http://localhost:3000
-- **REST API** → http://localhost:3001
+- **REST API (Health)** → http://localhost:3001/api/health
 - **Swagger docs** → http://localhost:3001/docs
 
 ---

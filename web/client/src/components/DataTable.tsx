@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Column<T> { key: keyof T; label: string; render?: (val: unknown, row: T) => React.ReactNode; }

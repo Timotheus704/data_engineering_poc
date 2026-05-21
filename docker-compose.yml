@@ -60,6 +60,8 @@ services:
       dockerfile: Dockerfile
     container_name: poc_pipeline_titanic
     env_file: .env
+    environment:
+      - PYTHONPATH=/pipelines
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +77,8 @@ services:
       dockerfile: Dockerfile
     container_name: poc_pipeline_nyc_taxi
     env_file: .env
+    environment:
+      - PYTHONPATH=/pipelines
     depends_on:
       postgres:
         condition: service_healthy
