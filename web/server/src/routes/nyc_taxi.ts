@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
-import { taxiCreateSchema, taxiUpdateSchema } from '../schemas/nyc_taxi';
+import { taxiCreateSchema, taxiUpdateSchema } from '../schemas';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import type { TaxiCreate, TaxiUpdate } from '../schemas/nyc_taxi';
+import type { TaxiCreate, TaxiUpdate } from '../schemas';
 
 interface TaxiRow {
   id: number;

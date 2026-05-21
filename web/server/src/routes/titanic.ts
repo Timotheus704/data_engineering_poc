@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query, withTransaction } from '../db';
-import { titanicCreateSchema, titanicUpdateSchema, titanicBulkDeleteSchema } from '../schemas/titanic';
+import { titanicCreateSchema, titanicUpdateSchema, titanicBulkDeleteSchema } from '../schemas';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import type { TitanicCreate, TitanicUpdate } from '../schemas/titanic';
+import type { TitanicCreate, TitanicUpdate } from '../schemas';
 
 interface TitanicRow {
   id: number;
