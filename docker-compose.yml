@@ -20,9 +20,12 @@ x-airflow-common: &airflow-common
   user: "${AIRFLOW_UID:-50000}:0"
   deploy:
     resources:
+      limits:
+        cpus: '4.0'
+        memory: 8192M
       reservations:
-        cpus: '0.5'
-        memory: 1024M
+        cpus: '1.0'
+        memory: 2048M
   volumes:
     - ./orchestration/airflow/dags:/opt/airflow/dags
     - ./orchestration/airflow/logs:/opt/airflow/logs
@@ -49,6 +52,14 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+        reservations:
+          cpus: '0.5'
+          memory: 1024M
 
   app:
     build:
@@ -79,6 +90,11 @@ services:
       - ${HOME}/.kaggle:/root/.kaggle:ro
     command: python titanic/ingest.py
     profiles: [pipeline]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
 
   pipeline_nyc_taxi:
     build:
@@ -96,6 +112,11 @@ services:
       - ${HOME}/.kaggle:/root/.kaggle:ro
     command: python nyc_taxi/ingest.py
     profiles: [pipeline]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
 
   # ── Web application ──────────────────────────────────────────────────────────
 
@@ -178,6 +199,11 @@ services:
         condition: service_healthy
     command: run --profiles-dir .
     profiles: [transform]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
 
   great_expectations:
     build:
@@ -196,6 +222,11 @@ services:
         condition: service_healthy
     command: python orchestration/great_expectations/validate.py titanic_staging
     profiles: [quality]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
 
 volumes:
   postgres_data:
