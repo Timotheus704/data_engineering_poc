@@ -115,12 +115,10 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
     '/taxi/:id',
     { schema: { body: zodToJsonSchema(taxiUpdateSchema as any) } },
     async (req, reply) => {
-      const parsed = taxiUpdateSchema.safeParse(req.body);
-      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
       const existing = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
       if (!existing.length) return reply.status(404).send({ error: 'Trip not found' });
 
-      const b = { ...existing[0], ...parsed.data };
+      const b = { ...existing[0], ...req.body };
       const rows = await query<TaxiRow>(`
         UPDATE staging.nyc_taxi
         SET vendor_id=$1, pickup_datetime=$2, dropoff_datetime=$3, passenger_count=$4,

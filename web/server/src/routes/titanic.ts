@@ -91,11 +91,9 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
     '/titanic',
     { schema: { body: zodToJsonSchema(titanicCreateSchema as any) } },
     async (req, reply) => {
-      // runtime safety: parse with zod before any DB access
       const parsed = titanicCreateSchema.safeParse(req.body);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
       const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = parsed.data;
-
       const rows = await query<TitanicRow>(`
         INSERT INTO staging.titanic (survived, pclass, name, sex, age, sib_sp, parch, ticket, fare, cabin, embarked)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
@@ -111,12 +109,10 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
     '/titanic/:id',
     { schema: { body: zodToJsonSchema(titanicUpdateSchema as any) } },
     async (req, reply) => {
-      const parsed = titanicUpdateSchema.safeParse(req.body);
-      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
       const existing = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
       if (!existing.length) return reply.status(404).send({ error: 'Passenger not found' });
 
-      const merged = { ...existing[0], ...parsed.data };
+      const merged = { ...existing[0], ...req.body };
       const rows = await query<TitanicRow>(`
         UPDATE staging.titanic
         SET survived=$1, pclass=$2, name=$3, sex=$4, age=$5,
@@ -142,9 +138,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
     '/titanic',
     { schema: { body: zodToJsonSchema(titanicBulkDeleteSchema as any) } },
     async (req, reply) => {
-      const parsed = titanicBulkDeleteSchema.safeParse(req.body ?? {});
-      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-      const { ids } = parsed.data;
+      const { ids } = req.body;
       if (!ids?.length) return reply.status(400).send({ error: 'ids array required' });
       const placeholders = ids.map((_: any, i: number) => `$${i + 1}`).join(',');
       const rows = await query(`DELETE FROM staging.titanic WHERE id IN (${placeholders}) RETURNING id`, ids);

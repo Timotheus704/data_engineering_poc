@@ -26,10 +26,9 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/admin/tables/:schema/:table/columns
   fastify.get<{ Params: { schema: string; table: string } }>(
     '/admin/tables/:schema/:table/columns',
+    { schema: { params: zodToJsonSchema(adminTableParamsSchema as any) } },
     async (req, reply) => {
-      const parsed = adminTableParamsSchema.safeParse(req.params as any);
-      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-      const { schema, table } = parsed.data;
+      const { schema, table } = req.params as any;
       const rows = await query(`
         SELECT
           column_name,
@@ -46,12 +45,15 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /api/admin/query — safe raw SELECT
-  fastify.post<{ Body: { sql: string } }>('/admin/query', async (req, reply) => {
-    const parsed = adminQuerySchema.safeParse(req.body ?? {});
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-    const { sql } = parsed.data;
+  fastify.post<{ Body: { sql: string } }>(
+    '/admin/query',
+    { schema: { body: zodToJsonSchema(adminQuerySchema as any) } },
+    async (req, reply) => {
+      const parsed = adminQuerySchema.safeParse(req.body ?? {});
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
+      const { sql } = parsed.data;
 
-    if (!sql) return reply.status(400).send({ error: 'sql is required' });
+      if (!sql) return reply.status(400).send({ error: 'sql is required' });
     const trimmed = sql.trim().toUpperCase();
     if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('WITH')) {
       return reply.status(400).send({ error: 'Only SELECT and WITH (CTE) statements are permitted' });

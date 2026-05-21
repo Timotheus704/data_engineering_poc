@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import type { ZodTypeProvider } from '@fastify/type-provider-zod';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -27,7 +28,7 @@ async function build() {
         ? { target: 'pino-pretty', options: { colorize: true } }
         : undefined,
     },
-  });
+  }).withTypeProvider<ZodTypeProvider>();
 
   // ── CORS ──────────────────────────────────────────────────────────────────
   await fastify.register(cors, {
