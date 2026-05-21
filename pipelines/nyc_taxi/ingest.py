@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 import subprocess
+import zipfile
 from uuid import uuid4
 import pandas as pd
 from pathlib import Path
@@ -39,13 +40,23 @@ def download_data() -> None:
         return
     print("[nyc_taxi] Downloading from Kaggle (this may take a moment)...")
     result = subprocess.run(
-        ["kaggle", "competitions", "download", "-c", DATASET, "-p", str(DATA_DIR), "--unzip"],
+        ["kaggle", "competitions", "download", "-c", DATASET, "-p", str(DATA_DIR)],
         capture_output=True, text=True
     )
     if result.returncode != 0:
         print(f"[nyc_taxi] Kaggle download failed:\n{result.stderr}")
         sys.exit(1)
-    print("[nyc_taxi] Download complete.")
+
+    # Manually unzip for platform independence
+    zip_path = DATA_DIR / f"{DATASET}.zip"
+    if zip_path.exists():
+        print(f"[nyc_taxi] Extracting {zip_path}...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(DATA_DIR)
+        os.remove(zip_path)
+        print("[nyc_taxi] Extraction complete.")
+    else:
+        print(f"[nyc_taxi] Warning: Expected {zip_path} but it was not found.")
 
 
 def load_and_clean() -> pd.DataFrame:
@@ -74,9 +85,12 @@ def load_and_clean() -> pd.DataFrame:
     })
 
     # Drop obviously bad rows
-    df = df[df["fare_amount"] > 0]
-    df = df[df["trip_distance"] > 0]
-    df = df[df["passenger_count"].between(1, 6)]
+    if "fare_amount" in df.columns:
+        df = df[df["fare_amount"] > 0]
+    if "trip_distance" in df.columns:
+        df = df[df["trip_distance"] > 0]
+    if "passenger_count" in df.columns:
+        df = df[df["passenger_count"].between(1, 6)]
 
     # Keep only columns that exist in our schema
     keep = [

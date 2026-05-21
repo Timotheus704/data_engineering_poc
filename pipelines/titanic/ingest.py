@@ -5,6 +5,7 @@ Run: python titanic/ingest.py
 import os
 import sys
 import subprocess
+import zipfile
 import pandas as pd
 from pathlib import Path
 from db import get_engine
@@ -23,13 +24,23 @@ def download_data() -> None:
         return
     print("[titanic] Downloading from Kaggle...")
     result = subprocess.run(
-        ["kaggle", "competitions", "download", "-c", DATASET, "-p", str(DATA_DIR), "--unzip"],
+        ["kaggle", "competitions", "download", "-c", DATASET, "-p", str(DATA_DIR)],
         capture_output=True, text=True
     )
     if result.returncode != 0:
         print(f"[titanic] Kaggle download failed:\n{result.stderr}")
         sys.exit(1)
-    print("[titanic] Download complete.")
+
+    # Manually unzip to avoid CLI version dependency issues
+    zip_path = DATA_DIR / f"{DATASET}.zip"
+    if zip_path.exists():
+        print(f"[titanic] Extracting {zip_path}...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(DATA_DIR)
+        os.remove(zip_path)
+        print("[titanic] Extraction complete.")
+    else:
+        print(f"[titanic] Warning: Expected {zip_path} but it was not found.")
 
 
 def load_and_clean() -> pd.DataFrame:

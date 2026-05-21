@@ -10,10 +10,19 @@ x-airflow-common: &airflow-common
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     AIRFLOW__DATABASE__SQL_ALCHEMY_SCHEMA: airflow
     AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    # Increase heartbeat timeout to prevent false-positive scheduler deaths
+    AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC: 30
+    # Limit parsing processes to reduce CPU spikes on small machines
+    AIRFLOW__SCHEDULER__PARSING_PROCESSES: 2
     KAGGLE_CONFIG_DIR: /opt/airflow/.kaggle
     POSTGRES_HOST: postgres
     PYTHONPATH: /opt/airflow/repo/pipelines
   user: "${AIRFLOW_UID:-50000}:0"
+  deploy:
+    resources:
+      reservations:
+        cpus: '0.5'
+        memory: 1024M
   volumes:
     - ./orchestration/airflow/dags:/opt/airflow/dags
     - ./orchestration/airflow/logs:/opt/airflow/logs
