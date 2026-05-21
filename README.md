@@ -56,6 +56,8 @@ Migrations in `db/migrations/` run automatically on first startup.
 ```bash
 # Install dependencies for each Node service (no legacy flags required)
 cd web/server && npm install
+cd ../client && npm install
+cd ../client && npm install
 cd ../../app && npm install
 
 # Seed sample data via the CLI

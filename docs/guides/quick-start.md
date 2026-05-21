@@ -72,7 +72,9 @@ The migrations in `db/migrations/` run automatically on first startup, creating 
 ## Step 4 — Load sample data
 
 ```bash
-cd app && npm install
+cd web/server && npm install
+cd ../client && npm install
+cd ../../app && npm install
 npx ts-node src/index.ts seed
 cd ..
 ```
