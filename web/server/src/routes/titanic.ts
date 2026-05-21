@@ -94,7 +94,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/titanic — create
   fastify.post<{ Body: CreateBody }>(
     '/titanic',
-    { schema: ( { body: zodToJsonSchema(titanicCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) }, __zod: { body: titanicCreateSchema } } as any ) },
+    ( { schema: { body: zodToJsonSchema(titanicCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } }, preValidation: async (request: any, reply: any) => { request.body = titanicCreateSchema.parse(request.body as unknown); }, __zod: { body: titanicCreateSchema } } as any ),
     async (req, reply) => {
       const parsedData = req.body as CreateBody;
       const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = parsedData;
@@ -111,7 +111,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // PATCH /api/titanic/:id — partial update
   fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
     '/titanic/:id',
-    { schema: { body: zodToJsonSchema(titanicUpdateSchema as any), response: { 200: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } } },
+    ( { schema: { body: zodToJsonSchema(titanicUpdateSchema as any), response: { 200: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } }, preValidation: async (request: any, reply: any) => { request.body = titanicUpdateSchema.parse(request.body as unknown); }, __zod: { body: titanicUpdateSchema } } as any ),
     async (req, reply) => {
       const existing = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
       if (!existing.length) return reply.status(404).send({ error: 'Passenger not found' });
@@ -144,7 +144,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /api/titanic — bulk delete by ids
   fastify.delete<{ Body: { ids: number[] } }>(
     '/titanic',
-    { schema: { body: zodToJsonSchema(titanicBulkDeleteSchema as any) } },
+    ( { schema: { body: zodToJsonSchema(titanicBulkDeleteSchema as any) }, preValidation: async (request: any, reply: any) => { request.body = titanicBulkDeleteSchema.parse(request.body as unknown); }, __zod: { body: titanicBulkDeleteSchema } } as any ),
     async (req, reply) => {
       const { ids } = req.body;
       if (!ids?.length) return reply.status(400).send({ error: 'ids array required' });

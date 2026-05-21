@@ -3,17 +3,34 @@ import { ZodError, ZodTypeAny } from 'zod';
 
 // Plugin: runs Zod validation on route schemas (body/params/query) before handler
 const zodPrevalidation: FastifyPluginAsync = async (fastify) => {
+  // Ensure any __zod metadata provided on route options or inside schema is preserved on route config
+  fastify.addHook('onRoute', (routeOptions: any) => {
+    const hasMeta = !!(routeOptions && (routeOptions.__zod || (routeOptions.schema && routeOptions.schema.__zod)));
+    console.log(`zod-prevalidation:onRoute: registered route ${routeOptions?.url || routeOptions?.path || '<unknown>'}, hasMeta=${hasMeta}`);
+    const meta = (routeOptions && (routeOptions.__zod || (routeOptions.schema && routeOptions.schema.__zod))) || undefined;
+    if (meta) {
+      routeOptions.config = routeOptions.config || {};
+      routeOptions.config.__zod = meta;
+      console.log(`zod-prevalidation:onRoute: attached meta for route ${routeOptions?.url || routeOptions?.path || '<unknown>'}`);
+    }
+  });
+
   fastify.addHook('preValidation', async (request, reply) => {
-    // route schema is available on request.routeConfig? in Fastify v5 it's request.routeConfig?.schema
-    const schema = (request as any).route?.schema || (request as any).routeConfig?.schema;
-    if (!schema) return;
+    // Try multiple locations for user-provided Zod metadata — Fastify may strip unknown keys from schema
+    const schema = (request as any).route?.schema || (request as any).routeConfig?.schema || (request as any).route?.config?.schema || (request as any).context?.config?.schema;
+    const routeMeta = (request as any).routeConfig?.__zod || (request as any).route?.__zod || (request as any).route?.config?.__zod || (request as any).context?.config?.__zod;
+    // If no explicit routeMeta but schema contains __zod (older convention), use it
+    const embeddedMeta = (schema as any)?.__zod;
+    const meta = routeMeta || embeddedMeta;
+    if (!meta) return;
 
     try {
+      // DEBUG: report presence of meta keys
+      console.log(`zod-prevalidation: routeMeta keys: ${meta ? Object.keys(meta).join(',') : 'none'}`);
+
       // validate body
-      if (schema.body && (request.body !== undefined)) {
-        // schema.body is a JSON Schema (from zodToJsonSchema) in many routes
-        // but we also keep the Zod schema accessible via schema.__zod (convention)
-        const zodSchema: ZodTypeAny | undefined = (schema as any).__zod?.body;
+      if (meta.body && (request.body !== undefined)) {
+        const zodSchema = meta.body as ZodTypeAny | undefined;
         if (zodSchema) {
           const parsed = zodSchema.parse(request.body);
           request.body = parsed;
@@ -21,8 +38,8 @@ const zodPrevalidation: FastifyPluginAsync = async (fastify) => {
       }
 
       // validate params
-      if (schema.params && (request.params !== undefined)) {
-        const zodSchema: ZodTypeAny | undefined = (schema as any).__zod?.params;
+      if (meta.params && (request.params !== undefined)) {
+        const zodSchema = meta.params as ZodTypeAny | undefined;
         if (zodSchema) {
           const parsed = zodSchema.parse(request.params);
           request.params = parsed;
@@ -30,8 +47,8 @@ const zodPrevalidation: FastifyPluginAsync = async (fastify) => {
       }
 
       // validate query
-      if (schema.querystring && (request.query !== undefined)) {
-        const zodSchema: ZodTypeAny | undefined = (schema as any).__zod?.query;
+      if (meta.query && (request.query !== undefined)) {
+        const zodSchema = meta.query as ZodTypeAny | undefined;
         if (zodSchema) {
           const parsed = zodSchema.parse(request.query);
           request.query = parsed;

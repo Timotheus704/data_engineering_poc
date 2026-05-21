@@ -90,7 +90,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/taxi
   fastify.post<{ Body: CreateBody }>(
     '/taxi',
-    { schema: ( { body: zodToJsonSchema(taxiCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) }, __zod: { body: taxiCreateSchema } } as any ) },
+    ( { schema: { body: zodToJsonSchema(taxiCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } }, preValidation: async (request: any, reply: any) => { request.body = taxiCreateSchema.parse(request.body as unknown); }, __zod: { body: taxiCreateSchema } } as any ),
     async (req, reply) => {
       const b = req.body as CreateBody;
       const rows = await query<TaxiRow>(`
@@ -116,7 +116,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   // PATCH /api/taxi/:id
   fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
     '/taxi/:id',
-    { schema: { body: zodToJsonSchema(taxiUpdateSchema as any), response: { 200: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } } },
+    ( { schema: { body: zodToJsonSchema(taxiUpdateSchema as any), response: { 200: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } }, preValidation: async (request: any, reply: any) => { request.body = taxiUpdateSchema.parse(request.body as unknown); }, __zod: { body: taxiUpdateSchema } } as any ),
     async (req, reply) => {
       const existing = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
       if (!existing.length) return reply.status(404).send({ error: 'Trip not found' });
