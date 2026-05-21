@@ -92,13 +92,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
     '/taxi',
     { schema: ( { body: zodToJsonSchema(taxiCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) }, __zod: { body: taxiCreateSchema } } as any ) },
     async (req, reply) => {
-      let b: CreateBody;
-      try {
-        b = taxiCreateSchema.parse(req.body as unknown);
-      } catch (err: unknown) {
-        const e = err as any;
-        return reply.status(400).send({ error: typeof e.format === 'function' ? e.format() : e.message ?? 'Invalid request' });
-      }
+      const b = req.body as CreateBody;
       const rows = await query<TaxiRow>(`
         INSERT INTO staging.nyc_taxi
           (vendor_id, pickup_datetime, dropoff_datetime, passenger_count, trip_distance,
