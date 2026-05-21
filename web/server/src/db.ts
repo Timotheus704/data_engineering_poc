@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool, PoolClient, QueryResultRow } from 'pg';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -18,7 +18,7 @@ pool.on('error', (err) => {
   console.error('[db] Unexpected pool error:', err.message);
 });
 
-export async function query<T = Record<string, unknown>>(
+export async function query<T extends QueryResultRow = QueryResultRow>(
   sql: string,
   params: unknown[] = []
 ): Promise<T[]> {

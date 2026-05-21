@@ -54,7 +54,12 @@ Migrations in `db/migrations/` run automatically on first startup.
 ### 3. Load sample data
 
 ```bash
-cd app && npm install
+# Install dependencies for each Node service (no legacy flags required)
+cd web/server && npm install
+cd ../../app && npm install
+
+# Seed sample data via the CLI
+cd ../app
 npx ts-node src/index.ts seed
 cd ..
 ```

@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
+import { adminQuerySchema, adminTableParamsSchema, adminQueryResponseSchema } from '../schemas';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
@@ -22,29 +24,41 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/admin/tables/:schema/:table/columns
-  fastify.get<{ Params: { schema: string; table: string } }>('/admin/tables/:schema/:table/columns', async (req, reply) => {
-    const { schema, table } = req.params;
-    if (!['staging','analytics'].includes(schema)) {
-      return reply.status(400).send({ error: 'Invalid schema' });
+  fastify.get<{ Params: { schema: string; table: string } }>(
+    '/admin/tables/:schema/:table/columns',
+    { schema: { params: zodToJsonSchema(adminTableParamsSchema as any) } },
+    async (req, reply) => {
+      const { schema, table } = req.params as any;
+      const rows = await query(`
+        SELECT
+          column_name,
+          data_type,
+          is_nullable,
+          column_default
+        FROM information_schema.columns
+        WHERE table_schema = $1 AND table_name = $2
+        ORDER BY ordinal_position`,
+        [schema, table]
+      );
+      return reply.send({ data: rows });
     }
-    const rows = await query(`
-      SELECT
-        column_name,
-        data_type,
-        is_nullable,
-        column_default
-      FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = $2
-      ORDER BY ordinal_position`,
-      [schema, table]
-    );
-    return reply.send({ data: rows });
-  });
+  );
 
   // POST /api/admin/query — safe raw SELECT
-  fastify.post<{ Body: { sql: string } }>('/admin/query', async (req, reply) => {
-    const { sql } = req.body ?? {};
-    if (!sql) return reply.status(400).send({ error: 'sql is required' });
+  fastify.post<{ Body: { sql: string } }>(
+    '/admin/query',
+    { schema: { body: zodToJsonSchema(adminQuerySchema as any), response: { 200: zodToJsonSchema(adminQueryResponseSchema as any) } } },
+    async (req, reply) => {
+      let sql: string;
+      try {
+        const parsed = adminQuerySchema.parse(req.body as unknown);
+        sql = parsed.sql;
+      } catch (err: unknown) {
+        const e = err as any;
+        return reply.status(400).send({ error: typeof e.format === 'function' ? e.format() : e.message ?? 'Invalid request' });
+      }
+
+      if (!sql) return reply.status(400).send({ error: 'sql is required' });
     const trimmed = sql.trim().toUpperCase();
     if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('WITH')) {
       return reply.status(400).send({ error: 'Only SELECT and WITH (CTE) statements are permitted' });

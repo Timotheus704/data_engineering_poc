@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, feature/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  web-server:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies (web/server)
+        working-directory: web/server
+        run: npm ci
+
+      - name: Build TypeScript (web/server)
+        working-directory: web/server
+        run: npm run build
+
+      - name: Run unit & integration tests (web/server)
+        working-directory: web/server
+        run: npx jest --config jest.config.ts --runInBand --testTimeout=20000
+
+      - name: Lint (optional)
+        working-directory: web/server
+        run: npm run lint || true
