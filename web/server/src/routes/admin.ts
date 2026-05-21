@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
-import { adminQuerySchema, adminTableParamsSchema } from '../schemas';
+import { adminQuerySchema, adminTableParamsSchema, adminQueryResponseSchema } from '../schemas';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
@@ -47,7 +47,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/admin/query — safe raw SELECT
   fastify.post<{ Body: { sql: string } }>(
     '/admin/query',
-    { schema: { body: zodToJsonSchema(adminQuerySchema as any) } },
+    { schema: { body: zodToJsonSchema(adminQuerySchema as any), response: { 200: zodToJsonSchema(adminQueryResponseSchema as any) } } },
     async (req, reply) => {
       const parsed = adminQuerySchema.safeParse(req.body ?? {});
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });

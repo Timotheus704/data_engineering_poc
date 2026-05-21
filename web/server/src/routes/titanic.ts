@@ -1,7 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query, withTransaction } from '../db';
-import { titanicCreateSchema, titanicUpdateSchema, titanicBulkDeleteSchema } from '../schemas';
+import { titanicCreateSchema, titanicUpdateSchema, titanicBulkDeleteSchema, titanicResponseSchema } from '../schemas';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 import type { TitanicCreate, TitanicUpdate } from '../schemas';
 
 interface TitanicRow {
@@ -80,16 +81,20 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/titanic/:id — single record
-  fastify.get<{ Params: IdParam }>('/titanic/:id', async (req, reply) => {
-    const rows = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
-    if (!rows.length) return reply.status(404).send({ error: 'Passenger not found' });
-    return reply.send({ data: rows[0] });
-  });
+  fastify.get<{ Params: IdParam }>(
+    '/titanic/:id',
+    { schema: { response: { 200: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } } },
+    async (req, reply) => {
+      const rows = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
+      if (!rows.length) return reply.status(404).send({ error: 'Passenger not found' });
+      return reply.send({ data: rows[0] });
+    }
+  );
 
   // POST /api/titanic — create
   fastify.post<{ Body: CreateBody }>(
     '/titanic',
-    { schema: { body: zodToJsonSchema(titanicCreateSchema as any) } },
+    { schema: { body: zodToJsonSchema(titanicCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } } },
     async (req, reply) => {
       const parsed = titanicCreateSchema.safeParse(req.body);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
@@ -107,7 +112,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // PATCH /api/titanic/:id — partial update
   fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
     '/titanic/:id',
-    { schema: { body: zodToJsonSchema(titanicUpdateSchema as any) } },
+    { schema: { body: zodToJsonSchema(titanicUpdateSchema as any), response: { 200: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } } },
     async (req, reply) => {
       const existing = await query<TitanicRow>('SELECT * FROM staging.titanic WHERE id = $1', [req.params.id]);
       if (!existing.length) return reply.status(404).send({ error: 'Passenger not found' });
@@ -127,11 +132,15 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // DELETE /api/titanic/:id
-  fastify.delete<{ Params: IdParam }>('/titanic/:id', async (req, reply) => {
-    const rows = await query<TitanicRow>('DELETE FROM staging.titanic WHERE id = $1 RETURNING *', [req.params.id]);
-    if (!rows.length) return reply.status(404).send({ error: 'Passenger not found' });
-    return reply.send({ data: rows[0], message: 'Passenger deleted' });
-  });
+  fastify.delete<{ Params: IdParam }>(
+    '/titanic/:id',
+    { schema: { response: { 200: zodToJsonSchema(z.object({ data: titanicResponseSchema, message: z.string() }) as any) } } },
+    async (req, reply) => {
+      const rows = await query<TitanicRow>('DELETE FROM staging.titanic WHERE id = $1 RETURNING *', [req.params.id]);
+      if (!rows.length) return reply.status(404).send({ error: 'Passenger not found' });
+      return reply.send({ data: rows[0], message: 'Passenger deleted' });
+    }
+  );
 
   // DELETE /api/titanic — bulk delete by ids
   fastify.delete<{ Body: { ids: number[] } }>(

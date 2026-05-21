@@ -1,7 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
-import { taxiCreateSchema, taxiUpdateSchema } from '../schemas';
+import { taxiCreateSchema, taxiUpdateSchema, taxiResponseSchema } from '../schemas';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 import type { TaxiCreate, TaxiUpdate } from '../schemas';
 
 interface TaxiRow {
@@ -76,16 +77,20 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/taxi/:id
-  fastify.get<{ Params: IdParam }>('/taxi/:id', async (req, reply) => {
-    const rows = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
-    if (!rows.length) return reply.status(404).send({ error: 'Trip not found' });
-    return reply.send({ data: rows[0] });
-  });
+  fastify.get<{ Params: IdParam }>(
+    '/taxi/:id',
+    { schema: { response: { 200: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } } },
+    async (req, reply) => {
+      const rows = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
+      if (!rows.length) return reply.status(404).send({ error: 'Trip not found' });
+      return reply.send({ data: rows[0] });
+    }
+  );
 
   // POST /api/taxi
   fastify.post<{ Body: CreateBody }>(
     '/taxi',
-    { schema: { body: zodToJsonSchema(taxiCreateSchema as any) } },
+    { schema: { body: zodToJsonSchema(taxiCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } } },
     async (req, reply) => {
       const parsed = taxiCreateSchema.safeParse(req.body);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
@@ -113,7 +118,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   // PATCH /api/taxi/:id
   fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
     '/taxi/:id',
-    { schema: { body: zodToJsonSchema(taxiUpdateSchema as any) } },
+    { schema: { body: zodToJsonSchema(taxiUpdateSchema as any), response: { 200: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } } },
     async (req, reply) => {
       const existing = await query<TaxiRow>('SELECT * FROM staging.nyc_taxi WHERE id = $1', [req.params.id]);
       if (!existing.length) return reply.status(404).send({ error: 'Trip not found' });
@@ -133,11 +138,15 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // DELETE /api/taxi/:id
-  fastify.delete<{ Params: IdParam }>('/taxi/:id', async (req, reply) => {
-    const rows = await query<TaxiRow>('DELETE FROM staging.nyc_taxi WHERE id = $1 RETURNING *', [req.params.id]);
-    if (!rows.length) return reply.status(404).send({ error: 'Trip not found' });
-    return reply.send({ data: rows[0], message: 'Trip deleted' });
-  });
+  fastify.delete<{ Params: IdParam }>(
+    '/taxi/:id',
+    { schema: { response: { 200: zodToJsonSchema(z.object({ data: taxiResponseSchema, message: z.string() }) as any) } } },
+    async (req, reply) => {
+      const rows = await query<TaxiRow>('DELETE FROM staging.nyc_taxi WHERE id = $1 RETURNING *', [req.params.id]);
+      if (!rows.length) return reply.status(404).send({ error: 'Trip not found' });
+      return reply.send({ data: rows[0], message: 'Trip deleted' });
+    }
+  );
 };
 
 export default taxiRoutes;
