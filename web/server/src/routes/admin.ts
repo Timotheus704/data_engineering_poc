@@ -49,9 +49,14 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     '/admin/query',
     { schema: { body: zodToJsonSchema(adminQuerySchema as any), response: { 200: zodToJsonSchema(adminQueryResponseSchema as any) } } },
     async (req, reply) => {
-      const parsed = adminQuerySchema.safeParse(req.body ?? {});
-      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-      const { sql } = parsed.data;
+      let sql: string;
+      try {
+        const parsed = adminQuerySchema.parse(req.body as unknown);
+        sql = parsed.sql;
+      } catch (err: unknown) {
+        const e = err as any;
+        return reply.status(400).send({ error: typeof e.format === 'function' ? e.format() : e.message ?? 'Invalid request' });
+      }
 
       if (!sql) return reply.status(400).send({ error: 'sql is required' });
     const trimmed = sql.trim().toUpperCase();

@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src/**/*.ts",
+    "test": "jest --passWithNoTests",
     "test:integration": "npm run build && node test/integration_tests.js"
   },
   "dependencies": {

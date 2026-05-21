@@ -18,12 +18,14 @@ function waitForServer(proc, timeout = 10000) {
 
 async function run() {
   console.log('Starting server...');
-  const proc = spawn('node', ['dist/index.js'], { cwd: __dirname + '/../', env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+  const port = process.env.TEST_PORT || '3002';
+  const env = { ...process.env, PORT: port };
+  const proc = spawn('node', ['dist/index.js'], { cwd: __dirname + '/../', env, stdio: ['ignore', 'pipe', 'pipe'] });
   try {
     await waitForServer(proc, 15000);
     console.log('Server ready, running tests...');
 
-    const base = 'http://localhost:3001';
+    const base = `http://localhost:${port}`;
 
     // 1) Titanic: invalid type for survived (should be number)
     let res = await fetch(base + '/api/titanic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ survived: 'nope', pclass: 1, name: 'x', sex: 'm' }) });

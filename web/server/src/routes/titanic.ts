@@ -96,9 +96,14 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
     '/titanic',
     { schema: { body: zodToJsonSchema(titanicCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } } },
     async (req, reply) => {
-      const parsed = titanicCreateSchema.safeParse(req.body);
-      if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
-      const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = parsed.data;
+      let parsedData: CreateBody;
+      try {
+        parsedData = titanicCreateSchema.parse(req.body as unknown);
+      } catch (err: unknown) {
+        const e = err as any;
+        return reply.status(400).send({ error: typeof e.format === 'function' ? e.format() : e.message ?? 'Invalid request' });
+      }
+      const { survived, pclass, name, sex, age, sib_sp = 0, parch = 0, ticket = '', fare = 0, cabin, embarked } = parsedData;
       const rows = await query<TitanicRow>(`
         INSERT INTO staging.titanic (survived, pclass, name, sex, age, sib_sp, parch, ticket, fare, cabin, embarked)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
