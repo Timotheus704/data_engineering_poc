@@ -78,7 +78,7 @@ export async function build() {
       return reply.status(400).send({
         error: 'Validation Error',
         message: 'The request payload does not match the required schema',
-        details: error.errors,
+        details: error.issues,
       });
     }
     reply.send(error);
