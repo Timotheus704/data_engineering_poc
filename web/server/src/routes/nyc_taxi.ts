@@ -90,7 +90,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/taxi
   fastify.post<{ Body: CreateBody }>(
     '/taxi',
-    { schema: { body: zodToJsonSchema(taxiCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) } } },
+    { schema: ( { body: zodToJsonSchema(taxiCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: taxiResponseSchema }) as any) }, __zod: { body: taxiCreateSchema } } as any ) },
     async (req, reply) => {
       let b: CreateBody;
       try {

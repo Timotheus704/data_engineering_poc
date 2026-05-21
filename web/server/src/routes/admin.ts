@@ -47,7 +47,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/admin/query — safe raw SELECT
   fastify.post<{ Body: { sql: string } }>(
     '/admin/query',
-    { schema: { body: zodToJsonSchema(adminQuerySchema as any), response: { 200: zodToJsonSchema(adminQueryResponseSchema as any) } } },
+    { schema: ( { body: zodToJsonSchema(adminQuerySchema as any), response: { 200: zodToJsonSchema(adminQueryResponseSchema as any) }, __zod: { body: adminQuerySchema } } as any ) },
     async (req, reply) => {
       let sql: string;
       try {

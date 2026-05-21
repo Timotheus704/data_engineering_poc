@@ -67,8 +67,10 @@ export async function build() {
     uiConfig: { docExpansion: 'list' },
   });
 
-  // ── Register validation error handler ─────────────────────────────────────
+  // ── Register validation error handler and preValidation plugin ───────────
   await fastify.register(validationHandler);
+  const zodPrevalidation = await import('./plugins/zod-prevalidation');
+  await fastify.register(zodPrevalidation.default);
 
   // ── Routes ────────────────────────────────────────────────────────────────
   await fastify.register(healthRoutes);

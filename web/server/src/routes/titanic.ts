@@ -94,7 +94,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/titanic — create
   fastify.post<{ Body: CreateBody }>(
     '/titanic',
-    { schema: { body: zodToJsonSchema(titanicCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) } } },
+    { schema: ( { body: zodToJsonSchema(titanicCreateSchema as any), response: { 201: zodToJsonSchema(z.object({ data: titanicResponseSchema }) as any) }, __zod: { body: titanicCreateSchema } } as any ) },
     async (req, reply) => {
       let parsedData: CreateBody;
       try {
