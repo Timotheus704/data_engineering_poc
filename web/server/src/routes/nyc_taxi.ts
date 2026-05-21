@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
 import { taxiCreateSchema, taxiUpdateSchema } from '../schemas/nyc_taxi';
-import { zodToJsonSchema } from '../utils/zod-to-json-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { TaxiCreate, TaxiUpdate } from '../schemas/nyc_taxi';
 
 interface TaxiRow {
@@ -85,7 +85,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/taxi
   fastify.post<{ Body: CreateBody }>(
     '/taxi',
-    { schema: { body: zodToJsonSchema(taxiCreateSchema) } },
+    { schema: { body: zodToJsonSchema(taxiCreateSchema as any) } },
     async (req, reply) => {
       const parsed = taxiCreateSchema.safeParse(req.body);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
@@ -113,7 +113,7 @@ const taxiRoutes: FastifyPluginAsync = async (fastify) => {
   // PATCH /api/taxi/:id
   fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
     '/taxi/:id',
-    { schema: { body: zodToJsonSchema(taxiUpdateSchema) } },
+    { schema: { body: zodToJsonSchema(taxiUpdateSchema as any) } },
     async (req, reply) => {
       const parsed = taxiUpdateSchema.safeParse(req.body);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });

@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query } from '../db';
 import { adminQuerySchema, adminTableParamsSchema } from '../schemas/admin';
-import { zodToJsonSchema } from '../utils/zod-to-json-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
 

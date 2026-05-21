@@ -20,7 +20,8 @@
     "fastify-plugin": "^5.0.0",
     "pg": "^8.12.0",
     "pino-pretty": "^11.2.1",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

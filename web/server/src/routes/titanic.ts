@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { query, withTransaction } from '../db';
 import { titanicCreateSchema, titanicUpdateSchema, titanicBulkDeleteSchema } from '../schemas/titanic';
-import { zodToJsonSchema } from '../utils/zod-to-json-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { TitanicCreate, TitanicUpdate } from '../schemas/titanic';
 
 interface TitanicRow {
@@ -89,7 +89,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/titanic — create
   fastify.post<{ Body: CreateBody }>(
     '/titanic',
-    { schema: { body: zodToJsonSchema(titanicCreateSchema) } },
+    { schema: { body: zodToJsonSchema(titanicCreateSchema as any) } },
     async (req, reply) => {
       // runtime safety: parse with zod before any DB access
       const parsed = titanicCreateSchema.safeParse(req.body);
@@ -109,7 +109,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // PATCH /api/titanic/:id — partial update
   fastify.patch<{ Params: IdParam; Body: UpdateBody }>(
     '/titanic/:id',
-    { schema: { body: zodToJsonSchema(titanicUpdateSchema) } },
+    { schema: { body: zodToJsonSchema(titanicUpdateSchema as any) } },
     async (req, reply) => {
       const parsed = titanicUpdateSchema.safeParse(req.body);
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });
@@ -140,7 +140,7 @@ const titanicRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /api/titanic — bulk delete by ids
   fastify.delete<{ Body: { ids: number[] } }>(
     '/titanic',
-    { schema: { body: zodToJsonSchema(titanicBulkDeleteSchema) } },
+    { schema: { body: zodToJsonSchema(titanicBulkDeleteSchema as any) } },
     async (req, reply) => {
       const parsed = titanicBulkDeleteSchema.safeParse(req.body ?? {});
       if (!parsed.success) return reply.status(400).send({ error: parsed.error.format() });

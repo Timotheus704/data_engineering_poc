@@ -4,7 +4,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import * as dotenv from 'dotenv';
 
-import { zodToJsonSchema } from './utils/zod-to-json-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { titanicCreateSchema } from './schemas/titanic';
 import { taxiCreateSchema } from './schemas/nyc_taxi';
 import { adminQuerySchema } from './schemas/admin';
@@ -37,9 +37,9 @@ async function build() {
 
   // ── Swagger / OpenAPI ─────────────────────────────────────────────────────
   const componentsSchemas: Record<string, any> = {
-    TitanicCreate: zodToJsonSchema(titanicCreateSchema),
-    TaxiCreate: zodToJsonSchema(taxiCreateSchema),
-    AdminQuery: zodToJsonSchema(adminQuerySchema),
+    TitanicCreate: zodToJsonSchema(titanicCreateSchema as any),
+    TaxiCreate: zodToJsonSchema(taxiCreateSchema as any),
+    AdminQuery: zodToJsonSchema(adminQuerySchema as any),
   };
 
   await fastify.register(swagger, {
