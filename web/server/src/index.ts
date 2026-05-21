@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from '@fastify/type-provider-zod';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import { ZodError } from 'zod';
 import * as dotenv from 'dotenv';
 
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -71,6 +72,17 @@ export async function build() {
   await fastify.register(validationHandler);
   const zodPrevalidation = await import('./plugins/zod-prevalidation');
   await fastify.register(zodPrevalidation.default);
+
+  fastify.setErrorHandler((error, _request, reply) => {
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'The request payload does not match the required schema',
+        details: error.errors,
+      });
+    }
+    reply.send(error);
+  });
 
   // ── Routes ────────────────────────────────────────────────────────────────
   await fastify.register(healthRoutes);
