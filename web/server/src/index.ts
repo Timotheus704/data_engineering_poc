@@ -14,6 +14,7 @@ import healthRoutes from './routes/health';
 import titanicRoutes from './routes/titanic';
 import taxiRoutes from './routes/nyc_taxi';
 import adminRoutes from './routes/admin';
+import validationHandler from './plugins/validation-handler';
 
 dotenv.config();
 
@@ -54,6 +55,9 @@ async function build() {
     routePrefix: '/docs',
     uiConfig: { docExpansion: 'list' },
   });
+
+  // ── Register validation error handler ─────────────────────────────────────
+  await fastify.register(validationHandler);
 
   // ── Routes ────────────────────────────────────────────────────────────────
   await fastify.register(healthRoutes);
