@@ -29,6 +29,7 @@ Production-shaped proof-of-concept data platform demonstrating end-to-end workfl
 | Node.js | 20+ | `brew install node` |
 | Python | 3.11+ | `brew install python@3.11` *(pipelines only)* |
 | psql | Any | `brew install libpq && brew link --force libpq` *(optional)* |
+| nvm (optional) | Any | Reads `.nvmrc` automatically; run `nvm use` |
 
 ---
 

@@ -9,7 +9,9 @@ on:
   pull_request:
     paths:
       - 'app/**'
-
+      
+# Node.js version policy: must match node:20-alpine used in all Dockerfiles.
+# If you update the Docker base image, update this version too.
 jobs:
   build-and-test:
     name: Build TypeScript app
