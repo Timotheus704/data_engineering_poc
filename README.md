@@ -1,4 +1,13 @@
-# PoC Repo — Data Platform & Full-Stack Demo
+# Production Data Platform Architecture
+
+This repository captures an opinionated set of architectural patterns and conventions for building production-grade data platforms. It serves as both a functional blueprint and a practitioner reference, emphasizing why systems are designed in a particular way—highlighting design rationale, operational trade-offs, and strategies for long-term evolution rather than focusing on specific tools or step-by-step tutorials.
+
+Organized as a modular monorepo, the platform is composed of distinct components—including ingestion pipelines, orchestration, transformation layers, infrastructure, and APIs. Each module is intentionally designed to be independently deployable, reflecting how systems are typically structured at enterprise scale, where these components would reside in separate repositories. While consolidated here for clarity and accessibility, the architecture prioritizes maintainability, scalability, and clear separation of concerns as the system grows.
+
+This project reflects real-world production considerations, focusing on how each layer contributes meaningful value under operational constraints. The goal is to demonstrate adaptable architectural patterns that remain robust across environments and tooling choices.
+
+My core production experience is centered on designing enterprise-scale solutions within the Google Cloud ecosystem, particularly using BigQuery. To make these patterns accessible without requiring a cloud account, the local development stack uses PostgreSQL and Docker. The infra/ directory contains Terraform configurations targeting GCP (including BigQuery, Composer, and Cloud Run), illustrating the intended production deployment and bridging the gap between local development and cloud-native infrastructure.
+
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)
 ![Python](https://img.shields.io/badge/Python-3.11-green?logo=python)
@@ -8,8 +17,6 @@
 ![Apache Kafka](https://img.shields.io/badge/Kafka-7.6-black?logo=apachekafka)
 ![React](https://img.shields.io/badge/React-18-blue?logo=react)
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
-
-A production-grade data platform proof-of-concept demonstrating modern data engineering and full-stack integration. Featuring Dockerized PostgreSQL, Python ingestion, Airflow orchestration, dbt transformations, Great Expectations quality gates, and a TypeScript/React management interface.
 
 ---
 
@@ -42,7 +49,7 @@ flowchart TB
         BROWSER[("Browser\nlocalhost:3000")]
     end
 
-    subgraph Docker["Docker Compose"]
+    subgraph Docker["Docker Compose (Local)"]
         subgraph Web["Web Profile"]
             NGINX["nginx\n(React App)\nport 3000"]
             API["Fastify API\nport 3001\n/docs → Swagger"]
@@ -70,6 +77,14 @@ flowchart TB
         end
     end
 
+    subgraph GCP["GCP (Production Target)"]
+        GCS[("Cloud Storage")]
+        BQ[("BigQuery")]
+        CSQL[("Cloud SQL")]
+        COMP["Cloud Composer"]
+        CRUN["Cloud Run / Jobs"]
+    end
+
     BROWSER --> NGINX
     NGINX -->|"/api/*"| API
     API --> PG
@@ -85,6 +100,22 @@ flowchart TB
     DBT --> PG
     PY_N -->|"simulated stream"| KAFKA
     PROD --> KAFKA
+
+    %% Production Mapping
+    Pipeline -.-> CRUN
+    Orchestration -.-> COMP
+    Data -.-> BQ
+    Web -.-> CRUN
+    KAGGLE -.-> GCS
+
+    style External fill:#1e2a3a,color:#94a3b8
+    style Docker fill:#0f1117,color:#94a3b8
+    style Web fill:#162032,color:#94a3b8
+    style Data fill:#162032,color:#94a3b8
+    style Pipeline fill:#162032,color:#94a3b8
+    style Orchestration fill:#162032,color:#94a3b8
+    style Streaming fill:#162032,color:#94a3b8
+    style GCP fill:#1a73e8,color:#fff,stroke-dasharray: 5 5
 ```
 
 ---
@@ -100,9 +131,21 @@ flowchart TB
 | Transformations | dbt | Builds analytics views with lineage, tests, and docs |
 | Data Quality | Great Expectations | Validates staging data before downstream analytics build |
 | CLI App | TypeScript + Node 20 | Terminal interface to query and explore data |
+| CI/CD | GitHub Actions | Runs migrations and TS build checks on every push |
 | Web API | Fastify (TypeScript) | REST API with full CRUD + Swagger docs |
 | Web UI | React + Vite | Dashboard with charts, data tables, CRUD modals, admin panel |
-| CI/CD | GitHub Actions | Runs migrations and TS build checks on every push |
+
+*The web application is a demonstration interface for the data platform. The core engineering work is in `pipelines/`, `dbt/`, `orchestration/`, and `infra/`.*
+
+## How this maps to production
+
+| This repo | Production equivalent |
+|---|---|
+| Postgres in Docker | BigQuery (Analytics) + Cloud SQL (Metadata) |
+| Airflow local | Cloud Composer (Managed Airflow) |
+| Python pipelines | Cloud Run Jobs + GCS staging |
+| GitHub Actions migrations | Terraform Cloud + Cloud Build |
+| Docker Compose profiles | GKE namespaces or Cloud Run services |
 
 ---
 
@@ -295,4 +338,4 @@ Full documentation lives in `docs/`. Start at **[docs/INDEX.md](./docs/INDEX.md)
 | See all CLI commands | [CLI Reference](docs/reference/cli.md) |
 | Look up environment variables | [Environment Variables](docs/reference/environment-variables.md) |
 
-See [AGENTS.md](./AGENTS.md) for AI assistant context and conventions.
+See [DEVELOPER_GUIDE](./DEVELOPER_GUIDE) for AI assistant context and conventions.

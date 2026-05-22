@@ -1,4 +1,6 @@
 """
+Producer only — see docs/decisions/007-streaming-architecture.md for the full design including consumer, schema registry, and GCP Pub/Sub alternative.
+
 Streaming Demo Producer
 =======================
 Reads NYC taxi trip data from the CSV and publishes each row as a JSON

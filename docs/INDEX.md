@@ -13,7 +13,6 @@ Welcome to the PoC Repo documentation. Whether you're a first-time contributor o
 | Learn how the database is structured | [Database Design](architecture/database-design.md) |
 | Understand how Docker is used | [Docker & Containers](architecture/docker.md) |
 | Learn how CI/CD works | [CI/CD Pipeline](architecture/cicd.md) |
-| Understand the web app (API + UI) | [Web App Guide](guides/web-app.md) |
 | Run Airflow, dbt, and data quality checks | [Orchestration Guide](guides/orchestration.md) |
 | Add a new dataset pipeline | [Adding a Pipeline](guides/adding-a-pipeline.md) |
 | Add a new database migration | [Database Migrations Guide](guides/migrations.md) |
@@ -23,6 +22,11 @@ Welcome to the PoC Repo documentation. Whether you're a first-time contributor o
 | Look up environment variables | [Environment Variables](reference/environment-variables.md) |
 | Browse every file in the repo | [Project Structure](reference/project-structure.md) |
 | Understand a design decision | [Architecture Decision Records](decisions/) |
+| Understand the web app (API + UI) | [Web App Guide](guides/web-app.md) |
+
+---
+
+The web application is a demonstration interface for the data platform. The core engineering work is in `pipelines/`, `dbt/`, `orchestration/`, and `infra/`.
 
 ---
 

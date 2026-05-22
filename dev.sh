@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 # dev.sh — start the full web app stack in development mode
 # Usage: ./dev.sh [stop]
+#
+# Notes:
+# - This repository uses a modular Compose layout. The primary entrypoint
+#   (docker-compose.yml) includes focused fragments via the Compose `include`
+#   directive (Compose v2.20+): docker-compose.web.yml, docker-compose.orchestration.yml,
+#   docker-compose.streaming.yml. If your environment doesn't support `include`,
+#   run the fallback by specifying files explicitly, e.g.:
+#     docker compose -f docker-compose.yml -f docker-compose.web.yml -f docker-compose.orchestration.yml up
+#
+# - The script intentionally starts Postgres first (so migrations and the DB are
+#   available) and then runs the web/dev servers locally for a fast developer loop.
 set -e
 
 # Verify .env exists before starting — prevents confusing errors
@@ -28,7 +39,9 @@ echo ""
 
 # 1. Make sure postgres is running
 echo "▶  Starting Postgres..."
+# Use the primary compose entrypoint which includes any fragments via `include`.
 docker compose up -d postgres
+
 echo "   Waiting for Postgres to be healthy..."
 until docker compose exec postgres pg_isready -U poc_user -d poc_db -q 2>/dev/null; do
   sleep 1

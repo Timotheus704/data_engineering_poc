@@ -109,4 +109,4 @@ cd web/client && npm run build
 
 ---
 
-**Questions?** Check `AGENTS.md` for a deep dive into the platform philosophy or open a GitHub Issue.
+**Questions?** Check `DEVELOPER_GUIDE` for a deep dive into the platform philosophy or open a GitHub Issue.

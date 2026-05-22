@@ -1,0 +1,4 @@
+# terraform.tfvars.example - copy to terraform.tfvars and fill values
+project_id = "my-gcp-dev-project"
+project_prefix = "pocdev"
+location = "US"

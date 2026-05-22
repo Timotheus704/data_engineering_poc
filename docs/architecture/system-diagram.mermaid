@@ -4,7 +4,7 @@ flowchart TB
         BROWSER[("Browser\nlocalhost:3000")]
     end
 
-    subgraph Docker["Docker Compose"]
+    subgraph Docker["Docker Compose (Local)"]
         subgraph Web["Web Profile"]
             NGINX["nginx\n(React App)\nport 3000"]
             API["Fastify API\nport 3001\n/docs → Swagger"]
@@ -32,6 +32,14 @@ flowchart TB
         end
     end
 
+    subgraph GCP["GCP (Production Target)"]
+        GCS[("Cloud Storage")]
+        BQ[("BigQuery")]
+        CSQL[("Cloud SQL")]
+        COMP["Cloud Composer"]
+        CRUN["Cloud Run / Jobs"]
+    end
+
     BROWSER --> NGINX
     NGINX -->|"/api/*"| API
     API --> PG
@@ -48,6 +56,13 @@ flowchart TB
     PY_N -->|"simulated stream"| KAFKA
     PROD --> KAFKA
 
+    %% Production Mapping
+    Pipeline -.-> CRUN
+    Orchestration -.-> COMP
+    Data -.-> BQ
+    Web -.-> CRUN
+    KAGGLE -.-> GCS
+
     style External fill:#1e2a3a,color:#94a3b8
     style Docker fill:#0f1117,color:#94a3b8
     style Web fill:#162032,color:#94a3b8
@@ -55,3 +70,4 @@ flowchart TB
     style Pipeline fill:#162032,color:#94a3b8
     style Orchestration fill:#162032,color:#94a3b8
     style Streaming fill:#162032,color:#94a3b8
+    style GCP fill:#1a73e8,color:#fff,stroke-dasharray: 5 5

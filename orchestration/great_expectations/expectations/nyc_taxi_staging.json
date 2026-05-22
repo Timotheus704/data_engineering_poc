@@ -40,5 +40,16 @@
       "kwargs": { "column": "trip_distance", "min_value": 0, "strict_min": true },
       "meta": {}
     }
+    ,
+    {
+      "expectation_type": "expect_column_median_to_be_between",
+      "kwargs": { "column": "fare_amount", "min_value": 8, "max_value": 15 },
+      "meta": { "description": "Median fare expected to be between $8 and $15 for the dataset period." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "pickup_datetime" },
+      "meta": { "description": "Freshness indicator: pickup_datetime must be present; orchestration uses this field for recency checks.", "freshness": { "column": "pickup_datetime", "warn_after_hours": 24, "error_after_hours": 48 } }
+    }
   ]
 }
