@@ -5,6 +5,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ZodError } from 'zod';
 import * as dotenv from 'dotenv';
+import { randomUUID } from 'crypto';
 
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { titanicCreateSchema, titanicResponseSchema } from './schemas/titanic';
@@ -30,6 +31,10 @@ export async function build() {
         ? { target: 'pino-pretty', options: { colorize: true } }
         : undefined,
     },
+    // Use UUIDs as request IDs for globally unique correlation
+    genReqId: () => randomUUID(),
+    // Label used in logs to surface the request id consistently
+    requestIdLogLabel: 'requestId',
   }).withTypeProvider<ZodTypeProvider>();
 
   // Use Zod for request validation and response serialization
@@ -40,6 +45,11 @@ export async function build() {
   await fastify.register(cors, {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
+
+  // Add X-Request-Id header to every response for correlation
+  fastify.addHook('onSend', async (request, reply) => {
+    reply.header('X-Request-Id', request.id);
   });
 
   // ── Swagger / OpenAPI ─────────────────────────────────────────────────────

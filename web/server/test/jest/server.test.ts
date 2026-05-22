@@ -195,6 +195,13 @@ describe('API Integration Tests', () => {
       expect(res.body.db).toBe('connected');
     });
 
+    it('includes X-Request-Id header in every response', async () => {
+      mockQuery.mockResolvedValueOnce([{ version: 'PostgreSQL 16.3' }]);
+      const res = await request(app.server).get('/health');
+      expect(res.headers['x-request-id']).toBeDefined();
+      expect(res.headers['x-request-id']).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    });
+
     it('returns 503 when database is unreachable', async () => {
       mockQuery.mockRejectedValueOnce(new Error('Connection refused'));
 
