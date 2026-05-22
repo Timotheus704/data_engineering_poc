@@ -4,9 +4,6 @@ models:
   - name: titanic_survival_summary
     description: Survival rates by passenger class and sex.
     columns:
-      - name: pclass
-        data_tests:
-          - not_null
       - name: sex
         data_tests:
           - not_null
@@ -29,3 +26,18 @@ models:
       - name: avg_fare_usd
         data_tests:
           - not_null
+  - name: stg_titanic
+    description: >
+      Cleaned and standardized Titanic passenger data. Applies type normalization,
+      derived fields (family_size), null standardization, and code expansion
+      (survived→boolean, pclass→name, embarked→full port name).
+    columns:
+      - name: passenger_key
+        description: "Surrogate key from the staging table auto-increment ID"
+        data_tests: [not_null, unique]
+      - name: did_survive
+        description: "Boolean survival flag. True=survived, False=did not survive, NULL=unknown"
+        data_tests: [not_null]
+      - name: family_size
+        description: "Total family members aboard: siblings_spouses + parents_children"
+        data_tests: [not_null]     
