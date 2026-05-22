@@ -1,9 +1,9 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsyncZod } from '@fastify/type-provider-zod';
 import { query } from '../db';
 import { adminQuerySchema, adminTableParamsSchema, adminQueryResponseSchema } from '../schemas';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 
-const adminRoutes: FastifyPluginAsync = async (fastify) => {
+const adminRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
   // GET /api/admin/tables — all tables with row counts
   fastify.get('/admin/tables', async (_req, reply) => {
@@ -24,11 +24,11 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/admin/tables/:schema/:table/columns
-  fastify.get<{ Params: { schema: string; table: string } }>(
+  fastify.get(
     '/admin/tables/:schema/:table/columns',
-    { schema: { params: zodToJsonSchema(adminTableParamsSchema as any) } },
+    { schema: { params: adminTableParamsSchema } },
     async (req, reply) => {
-      const { schema, table } = req.params as any;
+      const { schema, table } = req.params;
       const rows = await query(`
         SELECT
           column_name,
@@ -45,11 +45,19 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /api/admin/query — safe raw SELECT
-  fastify.post<{ Body: { sql: string } }>(
+  fastify.post(
     '/admin/query',
-    ( { schema: { body: zodToJsonSchema(adminQuerySchema as any), response: { 200: zodToJsonSchema(adminQueryResponseSchema as any) } }, preValidation: async (request: any, reply: any) => { request.body = adminQuerySchema.parse(request.body as unknown); }, __zod: { body: adminQuerySchema } } as any ),
+    {
+      schema: {
+        body: adminQuerySchema,
+        response: {
+          200: adminQueryResponseSchema,
+          400: z.object({ error: z.string() })
+        }
+      }
+    },
     async (req, reply) => {
-      const { sql } = req.body as { sql: string };
+      const { sql } = req.body;
 
       if (!sql) return reply.status(400).send({ error: 'sql is required' });
     const trimmed = sql.trim().toUpperCase();

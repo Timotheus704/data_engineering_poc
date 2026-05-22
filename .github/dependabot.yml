@@ -1,0 +1,61 @@
+# Dependabot configuration
+# Automatically creates PRs to update dependencies when new versions are available.
+# This keeps the repo secure and up to date without manual effort.
+
+version: 2
+updates:
+  # npm dependencies for the TypeScript CLI
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "app"
+    # Limit to 5 open PRs at a time to avoid overwhelming the maintainer
+    open-pull-requests-limit: 5
+
+  # npm dependencies for the Fastify API server
+  - package-ecosystem: "npm"
+    directory: "/web/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "web-server"
+    open-pull-requests-limit: 5
+
+  # npm dependencies for the React client
+  - package-ecosystem: "npm"
+    directory: "/web/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "web-client"
+    open-pull-requests-limit: 5
+
+  # pip dependencies for Python pipelines
+  - package-ecosystem: "pip"
+    directory: "/pipelines"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "pipelines"
+    open-pull-requests-limit: 3
+
+  # GitHub Actions workflow versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"
+    open-pull-requests-limit: 3

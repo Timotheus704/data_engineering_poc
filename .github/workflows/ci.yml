@@ -6,12 +6,14 @@ on:
   pull_request:
     branches: [ main ]
 
+# Node.js version policy: must match node:20-alpine used in all Dockerfiles.
+# If you update the Docker base image, update this version too.
 jobs:
   web-server:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [20]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js

@@ -1,10 +1,11 @@
 import Fastify from 'fastify';
-import type { ZodTypeProvider } from '@fastify/type-provider-zod';
+import { ZodTypeProvider, serializerCompiler, validatorCompiler } from '@fastify/type-provider-zod';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ZodError } from 'zod';
 import * as dotenv from 'dotenv';
+import { randomUUID } from 'crypto';
 
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { titanicCreateSchema, titanicResponseSchema } from './schemas/titanic';
@@ -30,12 +31,25 @@ export async function build() {
         ? { target: 'pino-pretty', options: { colorize: true } }
         : undefined,
     },
+    // Use UUIDs as request IDs for globally unique correlation
+    genReqId: () => randomUUID(),
+    // Label used in logs to surface the request id consistently
+    requestIdLogLabel: 'requestId',
   }).withTypeProvider<ZodTypeProvider>();
+
+  // Use Zod for request validation and response serialization
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
 
   // ── CORS ──────────────────────────────────────────────────────────────────
   await fastify.register(cors, {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
+
+  // Add X-Request-Id header to every response for correlation
+  fastify.addHook('onSend', async (request, reply) => {
+    reply.header('X-Request-Id', request.id);
   });
 
   // ── Swagger / OpenAPI ─────────────────────────────────────────────────────
@@ -68,10 +82,8 @@ export async function build() {
     uiConfig: { docExpansion: 'list' },
   });
 
-  // ── Register validation error handler and preValidation plugin ───────────
+  // ── Register validation error handler ───────────
   await fastify.register(validationHandler);
-  const zodPrevalidation = await import('./plugins/zod-prevalidation');
-  await fastify.register(zodPrevalidation.default);
 
   fastify.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
@@ -97,8 +109,8 @@ async function start() {
   try {
     const fastify = await build();
     await fastify.listen({ port: PORT, host: HOST });
-    console.log(`\n🚀 API running at http://localhost:${PORT}`);
-    console.log(`📖 Swagger docs at http://localhost:${PORT}/docs\n`);
+    fastify.log.info(`\n🚀 API running at http://localhost:${PORT}`);
+    fastify.log.info(`\n📖 Swagger docs at http://localhost:${PORT}/docs\n`);
   } catch (err) {
     console.error(err);
     process.exit(1);

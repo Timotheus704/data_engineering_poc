@@ -46,6 +46,20 @@ Content-Type: application/json
 
 ---
 
+## Request Correlation
+
+Every API response includes an `X-Request-Id` header containing a UUID that uniquely identifies the request:
+
+```
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
+```
+
+This ID appears in all server-side log entries for the request, enabling you to trace a specific request through the logs. When reporting a bug, include this header value for faster diagnosis.
+
+---
+
+---
+
 ## Health
 
 ### `GET /health`
