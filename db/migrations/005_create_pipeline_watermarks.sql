@@ -1,5 +1,10 @@
 -- 005_create_pipeline_watermarks.sql
 -- Tracks incremental load state for datasets with event/update timestamps.
+-- Defensively creates orchestration schema in case 004 has not been applied.
+-- Dependencies: 004_create_orchestration_metadata.sql (for orchestration schema)
+
+CREATE SCHEMA IF NOT EXISTS orchestration;
+CREATE SCHEMA IF NOT EXISTS airflow;
 
 CREATE TABLE IF NOT EXISTS orchestration.pipeline_watermarks (
   dataset_name          TEXT PRIMARY KEY,

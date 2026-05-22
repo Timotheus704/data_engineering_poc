@@ -1,5 +1,9 @@
 -- 002_create_titanic.sql
 -- Staging table for raw Titanic dataset ingestion
+-- Dependencies: 001_init_schemas.sql (for staging/analytics schemas)
+
+CREATE SCHEMA IF NOT EXISTS staging;
+CREATE SCHEMA IF NOT EXISTS analytics;
 
 CREATE TABLE IF NOT EXISTS staging.titanic (
   id          SERIAL PRIMARY KEY,

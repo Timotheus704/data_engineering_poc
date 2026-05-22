@@ -1,5 +1,9 @@
 -- 003_create_nyc_taxi.sql
 -- Staging table for NYC Taxi trips dataset
+-- Dependencies: 001_init_schemas.sql (for staging/analytics schemas)
+
+CREATE SCHEMA IF NOT EXISTS staging;
+CREATE SCHEMA IF NOT EXISTS analytics;
 
 CREATE TABLE IF NOT EXISTS staging.nyc_taxi (
   id                  SERIAL PRIMARY KEY,
