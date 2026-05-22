@@ -12,7 +12,7 @@
     "test:integration": "npm run build && node test/integration_tests.js"
   },
   "dependencies": {
-    "@fastify/cors": "^10.0.0",
+    "@fastify/cors": "^11.2.0",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.0.0",
     "@fastify/type-provider-zod": "^1.0.0",
