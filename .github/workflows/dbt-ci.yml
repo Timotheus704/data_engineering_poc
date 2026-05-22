@@ -39,6 +39,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Map postgres hostname to localhost
+        # dbt profiles often use 'postgres' as the host. This ensures the name 
+        # resolves to the service container on the runner's host network.
+        run: echo "127.0.0.1 postgres" | sudo tee -a /etc/hosts
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
