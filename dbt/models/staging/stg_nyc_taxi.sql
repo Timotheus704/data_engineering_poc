@@ -1,3 +1,6 @@
+-- stg_nyc_taxi.sql
+-- DEPENDENCY: Requires migration 005 (005_create_pipeline_watermarks.sql)
+-- to have been applied. The source_row_hash column is added by that migration.
 SELECT
   id,
   vendor_id,

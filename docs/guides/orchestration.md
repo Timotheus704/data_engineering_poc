@@ -21,6 +21,20 @@ The NYC Taxi ingestion path supports both full-refresh and incremental modes. Ai
 
 ---
 
+## Prerequisites
+
+Before running dbt, ensure all migrations have been applied:
+
+```bash
+for f in db/migrations/*.sql; do
+  PGPASSWORD=poc_password psql -h localhost -U poc_user -d poc_db -f "$f"
+done
+```
+
+The dbt `stg_nyc_taxi` model requires migration `005` for the `source_row_hash` column.
+
+---
+
 ## Start Airflow
 
 Airflow is behind the `orchestration` Docker Compose profile.
