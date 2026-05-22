@@ -30,6 +30,11 @@ const titanicRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
   // GET /api/titanic — list with filters + pagination
   fastify.get<{ Querystring: ListQuery }>('/titanic', async (req, reply) => {
+    req.log.info({
+      filters: { pclass: req.query.pclass, survived: req.query.survived },
+      pagination: { limit: req.query.limit, offset: req.query.offset }
+    }, 'titanic:list request');
+    
     const { limit = 20, offset = 0, pclass, survived, sex } = req.query;
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -52,6 +57,7 @@ const titanicRoutes: FastifyPluginAsyncZod = async (fastify) => {
       ),
     ]);
 
+    req.log.info({ row_count: rows.length, total: parseInt(countRows[0].count) }, 'titanic:list response');
     return reply.send({ data: rows, total: parseInt(countRows[0].count), limit, offset });
   });
 

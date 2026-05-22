@@ -454,3 +454,36 @@ curl -X POST http://localhost:3001/api/admin/query \
   -H "Content-Type: application/json" \
   -d '{"sql":"SELECT COUNT(*) FROM staging.titanic WHERE survived = 1"}'
 ```
+
+## Observability Endpoints
+
+### `GET /metrics`
+
+Returns runtime metrics for the API process and database connection pool.
+Useful for monitoring health in development and as a template for Prometheus
+integration in production.
+
+**Response:**
+```json
+{
+  "timestamp": "2024-01-15T10:32:00.000Z",
+  "uptime_seconds": 3600,
+  "process": {
+    "memory_heap_used_mb": 45,
+    "memory_heap_total_mb": 128,
+    "memory_rss_mb": 78
+  },
+  "database": {
+    "pool": {
+      "total_connections": 3,
+      "idle_connections": 2,
+      "waiting_requests": 0
+    }
+  }
+}
+```
+
+**Production Note:** In a production deployment, this endpoint would emit
+[Prometheus text format](https://prometheus.io/docs/instrumenting/exposition_formats/)
+via the `prom-client` npm package, enabling direct scraping by Prometheus
+and visualization in Grafana.
