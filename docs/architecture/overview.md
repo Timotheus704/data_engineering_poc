@@ -20,41 +20,66 @@ The entire system runs on your laptop and is deployable to any environment with 
 
 ---
 
-## System diagram
+## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           Your machine / CI runner                           │
-│                                                                              │
-│  Browser          TypeScript CLI      Python Pipelines    GitHub Actions     │
-│  localhost:3000   (app/)              (pipelines/)        (.github/)         │
-│      │                │                    │                   │             │
-│      │ HTTP           │ SQL queries        │ Bulk INSERT       │ Migrations  │
-│      ▼                │                    │                   │             │
-│  ┌──────────────┐     │                    │                   │             │
-│  │  nginx       │     │                    │                   │             │
-│  │  (Docker)    │     │                    │                   │             │
-│  │  port 3000   │     │                    │                   │             │
-│  └──────┬───────┘     │                    │                   │             │
-│   /api/* │             │                    │                   │             │
-│         ▼             ▼                    ▼                   ▼             │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │                    Fastify REST API (web/server/)                      │  │
-│  │                         localhost:3001                                 │  │
-│  └────────────────────────────────┬───────────────────────────────────────┘  │
-│                                   │ pg pool                                  │
-│                                   ▼                                          │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │                     PostgreSQL 16 (Docker, port 5432)                  │  │
-│  │                                                                        │  │
-│  │   staging schema                    analytics schema                   │  │
-│  │   ├── titanic             ────►     ├── titanic_survival_summary (view) │  │
-│  │   └── nyc_taxi            ────►     └── nyc_taxi_hourly (view)          │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                     │
-                              Kaggle API (external)
+```mermaid
+flowchart TB
+    subgraph External["External Sources"]
+        KAGGLE[("Kaggle API\n(Titanic, NYC Taxi)")]
+        BROWSER[("Browser\nlocalhost:3000")]
+    end
+
+    subgraph Docker["Docker Compose"]
+        subgraph Web["Web Profile"]
+            NGINX["nginx\n(React App)\nport 3000"]
+            API["Fastify API\nport 3001\n/docs → Swagger"]
+        end
+
+        subgraph Data["Always Running"]
+            PG[("PostgreSQL 16\nport 5432\nstaging | analytics\norchestration")]
+            CLI["TypeScript CLI\n(ts-node)"]
+        end
+
+        subgraph Pipeline["Pipeline Profile"]
+            PY_T["Python\nTitanic Ingest"]
+            PY_N["Python\nNYC Taxi Ingest\n(full + incremental)"]
+        end
+
+        subgraph Orchestration["Orchestration Profile"]
+            AIR["Apache Airflow\nport 8080"]
+            DBT["dbt\n(transform)"]
+            GX["Great Expectations\n(quality gates)"]
+        end
+
+        subgraph Streaming["Streaming Profile"]
+            KAFKA["Apache Kafka\nport 9092"]
+            PROD["Streaming\nProducer"]
+        end
+    end
+
+    BROWSER --> NGINX
+    NGINX -->|"/api/*"| API
+    API --> PG
+    CLI --> PG
+    KAGGLE -->|"kaggle CLI"| PY_T
+    KAGGLE -->|"kaggle CLI"| PY_N
+    PY_T --> PG
+    PY_N --> PG
+    AIR -->|"runs"| PY_T
+    AIR -->|"runs"| PY_N
+    AIR -->|"runs after ingest"| GX
+    GX -->|"gates"| DBT
+    DBT --> PG
+    PY_N -->|"simulated stream"| KAFKA
+    PROD --> KAFKA
+
+    style External fill:#1e2a3a,color:#94a3b8
+    style Docker fill:#0f1117,color:#94a3b8
+    style Web fill:#162032,color:#94a3b8
+    style Data fill:#162032,color:#94a3b8
+    style Pipeline fill:#162032,color:#94a3b8
+    style Orchestration fill:#162032,color:#94a3b8
+    style Streaming fill:#162032,color:#94a3b8
 ```
 
 ---
