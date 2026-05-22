@@ -80,6 +80,8 @@ jobs:
 
       - name: Unit tests
         shell: bash
+        env:
+          PYTHONPATH: .:${{ github.workspace }}/pipelines
         run: |
           set -euo pipefail
           pytest -q
