@@ -3,6 +3,17 @@
 # Usage: ./dev.sh [stop]
 set -e
 
+# Verify .env exists before starting — prevents confusing errors
+if [ ! -f ".env" ]; then
+  echo ""
+  echo "❌ ERROR: .env file not found."
+  echo "   Copy the template and try again:"
+  echo ""
+  echo "   cp .env.example .env"
+  echo ""
+  exit 1
+fi
+
 if [ "$1" = "stop" ]; then
   echo "Stopping web containers..."
   docker compose --profile web down
