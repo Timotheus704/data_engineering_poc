@@ -10,7 +10,10 @@ poc-repo/
 ├── .env.example                    # Template for environment variables — copy to .env
 ├── .env                            # Your local credentials (gitignored, never committed)
 ├── .gitignore                      # Files git will never track
-├── docker-compose.yml              # Defines and connects all Docker services and profiles
+├── docker-compose.yml              # Primary compose entry (core services — uses `include` to load fragments)
+├── docker-compose.web.yml          # Web & client services (nginx, web_server, web_client)
+├── docker-compose.orchestration.yml # Orchestration & pipeline services (scheduler, workers, pipelines)
+├── docker-compose.streaming.yml    # Streaming connectors and optional components (e.g., Kafka)
 ├── dev.sh                          # One-command local dev startup (Postgres + API + React)
 ├── README.md                       # Project overview and getting-started instructions
 ├── CLAUDE.md                       # AI assistant context: full structure, conventions, commands
@@ -118,8 +121,15 @@ poc-repo/
 
 ## Key files explained
 
-### `docker-compose.yml`
-The single source of truth for the running system. Uses Docker profiles to group services: `postgres` always starts; `web_server` and `web_client` only start with `--profile web`; pipelines only start with `--profile pipeline`.
+### `docker-compose.yml` and included fragments
+The primary Docker Compose entrypoint (`docker-compose.yml`) defines the core runtime and uses the Compose `include` directive (Compose v2.20+) to pull in focused fragments for each subsystem:
+
+- `docker-compose.yml` — core services (Postgres, shared networks, volumes)
+- `docker-compose.web.yml` — web & client containers (Fastify server, React client, nginx)
+- `docker-compose.orchestration.yml` — orchestration and pipeline services (schedulers, workers, pipeline runners)
+- `docker-compose.streaming.yml` — streaming connectors and optional streaming components
+
+This split keeps the core runtime minimal while letting developers include only the subsystems they need. Use the main entrypoint (`docker compose up`) which will include fragments declared via `include`, or run a subset with profiles (for example `docker compose --profile web up` or `docker compose --profile pipeline up`). Update `dev.sh` to invoke the appropriate compose command for the desired development surface.
 
 ### `dev.sh`
 A convenience script that starts Postgres in Docker, then runs the Fastify server and Vite dev client on your Mac with hot reload. Use this for active development — changes to TypeScript and React files update instantly without rebuilding Docker images.

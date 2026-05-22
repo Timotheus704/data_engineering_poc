@@ -8,6 +8,13 @@ sources:
       - name: titanic
         description: Passenger records from the Kaggle Titanic competition.
         loaded_at_field: loaded_at
+        freshness:
+          warn_after:
+            count: 24
+            period: hour
+          error_after:
+            count: 48
+            period: hour
         columns:
           - name: id
             data_tests:
@@ -29,6 +36,13 @@ sources:
       - name: nyc_taxi
         description: NYC taxi trip sample loaded from Kaggle.
         loaded_at_field: loaded_at
+        freshness:
+          warn_after:
+            count: 24
+            period: hour
+          error_after:
+            count: 48
+            period: hour
         columns:
           - name: id
             data_tests:
@@ -49,3 +63,4 @@ sources:
             data_tests:
               - not_null
               - unique
+

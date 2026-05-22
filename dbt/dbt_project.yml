@@ -18,6 +18,8 @@ models:
     staging:
       +materialized: view
       +schema: staging_dbt
+      stg_nyc_taxi:
+        +pre-hook: "{{ check_migration_version() }}"  # Ensure migration version is verified before building this model to prevent drift between code and data migrations (operational correctness guard)
     analytics:
       +materialized: view
       +schema: analytics

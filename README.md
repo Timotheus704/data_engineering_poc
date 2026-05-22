@@ -1,10 +1,12 @@
 # Production Data Platform Architecture
 
-This repository serves as a functional blueprint for the architectural patterns I implement when building production-grade data platforms. Structured as a modular monorepo, every component—including ingestion pipelines, orchestration, transformation layers, and APIs—is engineered to be independently deployable. While consolidated here for visibility, these modules are designed to exist in dedicated repositories at enterprise scale.
+This repository captures an opinionated set of architectural patterns and conventions for building production-grade data platforms. It serves as both a functional blueprint and a practitioner reference, emphasizing why systems are designed in a particular way—highlighting design rationale, operational trade-offs, and strategies for long-term evolution rather than focusing on specific tools or step-by-step tutorials.
 
-The objective of this project is not to showcase a specific toolkit, but to demonstrate a deep understanding of *why* these systems are architected this way. It reflects the trade-offs required to build systems that remain maintainable under real-world operational constraints, ensuring each layer adds clear value as the platform evolves.
+Organized as a modular monorepo, the platform is composed of distinct components—including ingestion pipelines, orchestration, transformation layers, infrastructure, and APIs. Each module is intentionally designed to be independently deployable, reflecting how systems are typically structured at enterprise scale, where these components would reside in separate repositories. While consolidated here for clarity and accessibility, the architecture prioritizes maintainability, scalability, and clear separation of concerns as the system grows.
 
-My core production experience is centered on architecting enterprise-scale solutions using Google BigQuery and the GCP ecosystem. To ensure these patterns are portable and accessible without a cloud provider, the local stack leverages PostgreSQL and Docker. However, the `infra/` directory contains the GCP-targeting Terraform configurations that represent the intended production state, bridging the gap between local development and cloud-native deployment.
+This project reflects real-world production considerations, focusing on how each layer contributes meaningful value under operational constraints. The goal is to demonstrate adaptable architectural patterns that remain robust across environments and tooling choices.
+
+My core production experience is centered on designing enterprise-scale solutions within the Google Cloud ecosystem, particularly using BigQuery. To make these patterns accessible without requiring a cloud account, the local development stack uses PostgreSQL and Docker. The infra/ directory contains Terraform configurations targeting GCP (including BigQuery, Composer, and Cloud Run), illustrating the intended production deployment and bridging the gap between local development and cloud-native infrastructure.
 
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)

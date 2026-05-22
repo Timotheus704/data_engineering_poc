@@ -36,6 +36,47 @@ poc_db (the database)
 
 **`analytics`** is the serving layer. It contains SQL views that transform, aggregate, and clean staging data into shapes useful for querying. Views are not stored — they re-run the underlying SQL every time you query them. This means they always reflect the latest data in staging.
 
+### Medallion-style implementation (bronze/silver/gold)
+
+This project uses a lightweight medallion pattern to separate concerns and make evolution tractable. The `staging` schema is the bronze (raw) layer where ingested data is persisted with minimal modification. The `analytics` schema contains the silver/gold transforms — curated views and aggregates built from staging that are tuned for analysis and reporting. An orchestration layer (job schedules, orchestration schema or service) sits alongside these schemas to manage scheduling, retries, lineage, and operational metadata so that freshness, error handling, and observability are first-class.
+
+The PoC intentionally implements this pattern with Postgres tables and SQL views so the design is simple and inspectable; the same pattern maps naturally to Databricks or BigQuery where bronze/silver/gold correspond to raw ingestion tables, curated transform tables, and serving/aggregation tables or materialized views.
+
+```mermaid
+erDiagram
+    STAGING_TITANIC {
+        INTEGER passenger_id PK
+        SMALLINT survived
+        SMALLINT pclass
+        TEXT name
+        VARCHAR sex
+        NUMERIC age
+        TIMESTAMPTZ loaded_at
+    }
+    STAGING_NYC_TAXI {
+        INTEGER id PK
+        SMALLINT vendor_id
+        TIMESTAMPTZ pickup_datetime
+        TIMESTAMPTZ dropoff_datetime
+        NUMERIC total_amount
+        TIMESTAMPTZ loaded_at
+    }
+    ANALYTICS_TITANIC_SUMMARY {
+        INTEGER pclass
+        VARCHAR sex
+        INTEGER total_passengers
+        INTEGER survivors
+        NUMERIC survival_rate_pct
+    }
+    ANALYTICS_NYC_TAXI_HOURLY {
+        TIMESTAMPTZ hour
+        INTEGER total_trips
+        NUMERIC avg_fare_usd
+    }
+    STAGING_TITANIC ||--o{ ANALYTICS_TITANIC_SUMMARY : "aggregates"
+    STAGING_NYC_TAXI ||--o{ ANALYTICS_NYC_TAXI_HOURLY : "aggregates"
+```
+
 ---
 
 ## Tables

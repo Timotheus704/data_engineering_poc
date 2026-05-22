@@ -35,5 +35,31 @@
       "kwargs": { "column": "fare", "min_value": 0, "strict_min": false },
       "meta": {}
     }
+    ,
+    {
+      "expectation_type": "expect_column_mean_to_be_between",
+      "kwargs": { "column": "survived", "min_value": 0.35, "max_value": 0.45 },
+      "meta": { "description": "Historical survival rate (SUM(survived)/COUNT(*)) expected between 35% and 45%." }
+    },
+    {
+      "expectation_type": "expect_column_proportion_of_values_to_be_between",
+      "kwargs": { "column": "pclass", "value": 1, "min_value": 0.25, "max_value": 0.5 },
+      "meta": { "description": "Approximate proportion for pclass=1 (tune as needed)." }
+    },
+    {
+      "expectation_type": "expect_column_proportion_of_values_to_be_between",
+      "kwargs": { "column": "pclass", "value": 2, "min_value": 0.25, "max_value": 0.5 },
+      "meta": { "description": "Approximate proportion for pclass=2 (tune as needed)." }
+    },
+    {
+      "expectation_type": "expect_column_proportion_of_values_to_be_between",
+      "kwargs": { "column": "pclass", "value": 3, "min_value": 0.25, "max_value": 0.5 },
+      "meta": { "description": "Approximate proportion for pclass=3 (tune as needed)." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "loaded_at" },
+      "meta": { "description": "Freshness indicator: loaded_at must be present; orchestration uses this field to assert recent loads.", "freshness": { "loaded_at_field": "loaded_at", "warn_after_hours": 24, "error_after_hours": 48 } }
+    }
   ]
 }

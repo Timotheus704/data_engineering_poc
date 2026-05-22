@@ -1,0 +1,103 @@
+name: dbt-ci
+
+on:
+  pull_request:
+    paths:
+      - 'dbt/**'
+
+jobs:
+  dbt:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: analytics
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d analytics"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # Common Postgres env vars. If your dbt profile uses env_var(), map them there.
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: analytics
+
+      # dbt will look here due to the CLI flags below, but setting doesn't hurt.
+      DBT_PROFILES_DIR: '.'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m pip install --upgrade pip
+
+          # Prefer repo-managed deps if present.
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            # Keep this simple: install the package in editable mode.
+            # If you use Poetry/UV, replace this with your standard install command.
+            pip install -e .
+          fi
+
+          # Ensure dbt + Postgres adapter are available for CI.
+          # If your requirements already include these, this is a no-op.
+          pip install "dbt-core>=1.6" "dbt-postgres>=1.6"
+
+      - name: Wait for Postgres
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            pg_isready -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" && exit 0
+            sleep 2
+          done
+          echo "Postgres did not become ready in time" >&2
+          exit 1
+
+      - name: Run migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # This step should run all database migrations for the repo.
+          # Replace the command below with the repo's migration entrypoint.
+          # Examples:
+          #   make migrate
+          #   python -m pipelines.migrations
+          #   python scripts/run_migrations.py
+          if [ -f Makefile ] && grep -qE '^migrate:' Makefile; then
+            make migrate
+          else
+            echo "No migrate target found. Update this step to run your migrations." >&2
+            exit 1
+          fi
+
+      - name: dbt parse
+        run: |
+          dbt parse --profiles-dir .
+
+      - name: dbt test
+        run: |
+          dbt test --profiles-dir .

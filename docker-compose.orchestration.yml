@@ -1,0 +1,159 @@
+# docker-compose.orchestration.yml
+# Orchestration & transformation fragment. Defines shared anchor for Airflow and related services.
+
+x-airflow-common: &airflow-common
+  build:
+    context: ./orchestration/airflow
+    dockerfile: Dockerfile
+  env_file: .env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_SCHEMA: airflow
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    # Increase heartbeat timeout to prevent false-positive scheduler deaths
+    AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC: 30
+    # Limit parsing processes to reduce CPU spikes on small machines
+    AIRFLOW__SCHEDULER__PARSING_PROCESSES: 2
+    KAGGLE_CONFIG_DIR: /opt/airflow/.kaggle
+    POSTGRES_HOST: postgres
+    PYTHONPATH: /opt/airflow/repo/pipelines
+  user: "${AIRFLOW_UID:-50000}:0"
+  deploy:
+    resources:
+      limits:
+        cpus: '4.0'
+        memory: 8192M
+      reservations:
+        cpus: '1.0'
+        memory: 2048M
+  volumes:
+    - ./orchestration/airflow/dags:/opt/airflow/dags
+    - ./orchestration/airflow/logs:/opt/airflow/logs
+    - .:/opt/airflow/repo
+    - ${HOME}/.kaggle:/opt/airflow/.kaggle:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+  profiles: [orchestration]
+
+services:
+  airflow_init:
+    <<: *airflow-common
+    container_name: poc_airflow_init
+    command: >
+      bash -c "airflow db migrate &&
+      airflow users create
+      --username ${AIRFLOW_ADMIN_USER:-admin}
+      --password ${AIRFLOW_ADMIN_PASSWORD:-admin}
+      --firstname Data
+      --lastname Engineer
+      --role Admin
+      --email ${AIRFLOW_ADMIN_EMAIL:-admin@example.com} || true"
+
+  airflow_webserver:
+    <<: *airflow-common
+    container_name: poc_airflow_webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      airflow_init:
+        condition: service_completed_successfully
+
+  airflow_scheduler:
+    <<: *airflow-common
+    container_name: poc_airflow_scheduler
+    command: scheduler
+    depends_on:
+      airflow_init:
+        condition: service_completed_successfully
+
+  pipeline_titanic:
+    build:
+      context: ./pipelines
+      dockerfile: Dockerfile
+    container_name: poc_pipeline_titanic
+    env_file: .env
+    environment:
+      - PYTHONPATH=/pipelines
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./pipelines:/pipelines
+      - ${HOME}/.kaggle:/root/.kaggle:ro
+    command: python titanic/ingest.py
+    profiles: [pipeline]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+
+  pipeline_nyc_taxi:
+    build:
+      context: ./pipelines
+      dockerfile: Dockerfile
+    container_name: poc_pipeline_nyc_taxi
+    env_file: .env
+    environment:
+      - PYTHONPATH=/pipelines
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./pipelines:/pipelines
+      - ${HOME}/.kaggle:/root/.kaggle:ro
+    command: python nyc_taxi/ingest.py
+    profiles: [pipeline]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.8.2
+    container_name: poc_dbt
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./dbt:/usr/app
+    working_dir: /usr/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: run --profiles-dir .
+    profiles: [transform]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+
+  great_expectations:
+    build:
+      context: ./orchestration/airflow
+      dockerfile: Dockerfile
+    container_name: poc_great_expectations
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      PYTHONPATH: /opt/repo/pipelines
+    volumes:
+      - .:/opt/repo
+    working_dir: /opt/repo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python orchestration/great_expectations/validate.py titanic_staging
+    profiles: [quality]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M

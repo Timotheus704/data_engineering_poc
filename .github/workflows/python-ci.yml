@@ -1,0 +1,85 @@
+name: python-ci
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - 'uv.lock'
+      - 'Pipfile'
+      - 'Pipfile.lock'
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.py'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - 'uv.lock'
+      - 'Pipfile'
+      - 'Pipfile.lock'
+
+jobs:
+  python-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            pip install -e .
+          else
+            echo "No requirements.txt or pyproject.toml found; installing minimal tooling only." >&2
+          fi
+
+          # CI tooling (permissive lint + tests)
+          pip install flake8 pylint pytest sqlalchemy
+
+      - name: Compile pipeline files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d pipelines ]; then
+            echo "Compiling Python files under pipelines/"
+            find pipelines -type f -name "*.py" -print0 | xargs -0 -r python -m py_compile
+          else
+            echo "No pipelines/ directory found; skipping compilation." >&2
+          fi
+
+      - name: Lint (permissive)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Prefer flake8 because it is fast and easy to make permissive.
+          # --exit-zero ensures lint findings do not fail CI (PoC-friendly).
+          if command -v flake8 >/dev/null 2>&1; then
+            flake8 .               --exit-zero               --max-line-length=120               --extend-ignore=E203,W503               --max-complexity=20
+          else
+            # Fallback to pylint if flake8 isn't available
+            pylint . --exit-zero || true
+          fi
+
+      - name: Unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest -q
