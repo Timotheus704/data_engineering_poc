@@ -11,15 +11,15 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: analytics
+          POSTGRES_USER: poc_user
+          POSTGRES_PASSWORD: poc_password
+          POSTGRES_DB: poc_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d analytics"
+          --health-cmd="pg_isready -U poc_user -d poc_db"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -28,9 +28,9 @@ jobs:
       # Common Postgres env vars. If your dbt profile uses env_var(), map them there.
       PGHOST: 127.0.0.1
       PGPORT: '5432'
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: analytics
+      PGUSER: poc_user
+      PGPASSWORD: poc_password
+      PGDATABASE: poc_db
 
       # dbt will look here due to the CLI flags below, but setting doesn't hurt.
       DBT_PROFILES_DIR: '.'
@@ -80,19 +80,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # This step should run all database migrations for the repo.
-          # Replace the command below with the repo's migration entrypoint.
-          # Examples:
-          #   make migrate
-          #   python -m pipelines.migrations
-          #   python scripts/run_migrations.py
-          if [ -f Makefile ] && grep -qE '^migrate:' Makefile; then
-            make migrate
-          else
-            echo "No migrate target found. Update this step to run your migrations." >&2
-            exit 1
-          fi
+          for f in $(ls db/migrations/*.sql | sort); do
+            echo "▶ Running $f"
+            psql -f "$f"
+          done
 
       - name: dbt parse
         run: |
