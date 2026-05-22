@@ -1,6 +1,6 @@
-# AGENTS.md
+# DEVELOPER_GUIDE
 
-This file is the working guide for AI coding assistants touching this repo. Use it to move quickly, make changes in the right layer, and avoid breaking the proof-of-concept story.
+This guide was originally authored for AI coding assistants but applies equally to any developer onboarding to this repository.
 
 ---
 
