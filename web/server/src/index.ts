@@ -124,7 +124,7 @@ export async function build() {
     openapi: {
       info: { title: 'PoC Data API', version: '1.0.0', description: 'REST API for the PoC data platform' },
       servers: [{ url: `http://localhost:${PORT}` }],
-      components: { schemas: componentsSchemas },
+      components: { schemas: componentsSchemas as any },
     },
   });
 
