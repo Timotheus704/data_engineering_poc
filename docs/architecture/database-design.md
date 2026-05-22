@@ -141,6 +141,43 @@ ORDER BY 1;
 
 ---
 
+## Dimension Modeling: SCD Type 2
+
+The `analytics.dim_titanic_scd2` table demonstrates the **Type 2 Slowly Changing Dimension**
+pattern — a foundational data warehousing concept for tracking historical changes.
+
+### Why SCD2?
+
+Simple overwrite (SCD Type 1) loses history. For analytical questions like "how did
+our understanding of this data change over time?" or "what was the state of this record
+on a specific date?", you need to preserve history.
+
+### How to Query Current Records
+
+```sql
+SELECT * FROM analytics.dim_titanic_current;
+-- Equivalent to: WHERE is_current = TRUE
+```
+
+### How to Query a Record at a Point in Time
+
+```sql
+SELECT * FROM analytics.dim_titanic_scd2
+WHERE passenger_id = 2
+  AND valid_from <= '2024-01-15'::timestamptz
+  AND (valid_to IS NULL OR valid_to > '2024-01-15'::timestamptz);
+```
+
+### How to See All Versions of a Record
+
+```sql
+SELECT * FROM analytics.dim_titanic_history
+WHERE passenger_id = 2
+ORDER BY version_number;
+```
+
+---
+
 ## Migrations: how the schema gets created
 
 The schema is not created by hand — it is built by running numbered SQL scripts in order. This is called **database migration**.

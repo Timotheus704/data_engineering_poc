@@ -18,6 +18,8 @@ import taxiRoutes from './routes/nyc_taxi';
 import adminRoutes from './routes/admin';
 import validationHandler from './plugins/validation-handler';
 
+import metricsRoutes from './routes/metrics';
+
 dotenv.config();
 
 const PORT = parseInt(process.env.PORT ?? '3001');
@@ -81,6 +83,8 @@ export async function build() {
     routePrefix: '/docs',
     uiConfig: { docExpansion: 'list' },
   });
+
+  await fastify.register(metricsRoutes);
 
   // ── Register validation error handler ───────────
   await fastify.register(validationHandler);
