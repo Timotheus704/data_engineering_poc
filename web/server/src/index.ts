@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import type { ZodTypeProvider } from '@fastify/type-provider-zod';
+import { ZodTypeProvider, serializerCompiler, validatorCompiler } from '@fastify/type-provider-zod';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -31,6 +31,10 @@ export async function build() {
         : undefined,
     },
   }).withTypeProvider<ZodTypeProvider>();
+
+  // Use Zod for request validation and response serialization
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
 
   // ── CORS ──────────────────────────────────────────────────────────────────
   await fastify.register(cors, {
@@ -68,10 +72,8 @@ export async function build() {
     uiConfig: { docExpansion: 'list' },
   });
 
-  // ── Register validation error handler and preValidation plugin ───────────
+  // ── Register validation error handler ───────────
   await fastify.register(validationHandler);
-  const zodPrevalidation = await import('./plugins/zod-prevalidation');
-  await fastify.register(zodPrevalidation.default);
 
   fastify.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
