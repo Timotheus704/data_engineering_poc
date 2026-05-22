@@ -85,10 +85,17 @@ jobs:
             psql -f "$f"
           done
 
+      - name: dbt deps
+        working-directory: dbt
+        run: |
+          dbt deps --profiles-dir .
+
       - name: dbt parse
+        working-directory: dbt
         run: |
           dbt parse --profiles-dir .
 
       - name: dbt test
+        working-directory: dbt
         run: |
           dbt test --profiles-dir .
