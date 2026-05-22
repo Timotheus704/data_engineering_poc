@@ -1,0 +1,26 @@
+# CODEOWNERS
+# ===========
+# These owners are automatically requested for review when a PR touches
+# the matching paths. Replace @Timotheus704 with your actual handle.
+#
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all changes require review from the repo owner
+*                           @Timotheus704
+
+# Data engineering layer — migrations and pipelines
+db/migrations/              @Timotheus704
+pipelines/                  @Timotheus704
+dbt/                        @Timotheus704
+
+# Infrastructure — Docker and CI/CD
+docker-compose.yml          @Timotheus704
+.github/                    @Timotheus704
+
+# API — Fastify routes and schemas
+web/server/src/routes/      @Timotheus704
+web/server/src/schemas/     @Timotheus704
+
+# Documentation — any doc changes require owner review
+docs/                       @Timotheus704
+*.md                        @Timotheus704
