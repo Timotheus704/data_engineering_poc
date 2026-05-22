@@ -1,6 +1,91 @@
 # PoC Repo — Data Platform & Full-Stack Demo
 
-Production-shaped proof-of-concept data platform demonstrating end-to-end workflows: Dockerized PostgreSQL with ordered migrations; Python/Kaggle ingestion with incremental loading; Airflow orchestration and dbt transforms gated by Great Expectations; plus a TypeScript CLI, Fastify REST API (Swagger), and a React dashboard — all runnable locally via Docker Compose.
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)
+![Python](https://img.shields.io/badge/Python-3.11-green?logo=python)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)
+![Apache Airflow](https://img.shields.io/badge/Airflow-2.9-red?logo=apacheairflow)
+![dbt](https://img.shields.io/badge/dbt-1.8-orange?logo=dbt)
+![Apache Kafka](https://img.shields.io/badge/Kafka-7.6-black?logo=apachekafka)
+![React](https://img.shields.io/badge/React-18-blue?logo=react)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
+
+A production-grade data platform proof-of-concept demonstrating modern data engineering and full-stack integration. Featuring Dockerized PostgreSQL, Python ingestion, Airflow orchestration, dbt transformations, Great Expectations quality gates, and a TypeScript/React management interface.
+
+---
+
+## What This Repo Demonstrates
+
+This repository serves as a showcase for senior-level engineering patterns and modern data platform architecture:
+
+| Competency | Implementation |
+|---|---|
+| **Data Pipeline Architecture** | Incremental loading with watermarks, SCD2 dimensions, idempotent upserts |
+| **Data Quality** | Great Expectations validation gates blocking dbt runs on bad data |
+| **Data Transformation** | dbt with sources, refs, schema tests, and documented staging models |
+| **Orchestration** | Airflow DAG with retries, backfills, SLA callbacks, and operational metadata |
+| **Streaming** | Kafka producer/consumer demo simulating real-time event ingestion |
+| **API Design** | Fastify REST API with Zod validation, Swagger docs, and correlation IDs |
+| **Observability** | OpenTelemetry tracing, structured logging, /metrics endpoint |
+| **TypeScript** | Strict typed interfaces, generic query helpers, CLI with Commander |
+| **Infrastructure** | Docker Compose profiles, multi-stage builds, health checks, Dependabot |
+| **Testing** | Unit tests (schemas), integration tests (API routes with mocked DB) |
+| **Documentation** | ADRs, migration guides, architecture diagrams, Swagger UI |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph External["External Sources"]
+        KAGGLE[("Kaggle API\n(Titanic, NYC Taxi)")]
+        BROWSER[("Browser\nlocalhost:3000")]
+    end
+
+    subgraph Docker["Docker Compose"]
+        subgraph Web["Web Profile"]
+            NGINX["nginx\n(React App)\nport 3000"]
+            API["Fastify API\nport 3001\n/docs → Swagger"]
+        end
+
+        subgraph Data["Always Running"]
+            PG[("PostgreSQL 16\nport 5432\nstaging | analytics\norchestration")]
+            CLI["TypeScript CLI\n(ts-node)"]
+        end
+
+        subgraph Pipeline["Pipeline Profile"]
+            PY_T["Python\nTitanic Ingest"]
+            PY_N["Python\nNYC Taxi Ingest\n(full + incremental)"]
+        end
+
+        subgraph Orchestration["Orchestration Profile"]
+            AIR["Apache Airflow\nport 8080"]
+            DBT["dbt\n(transform)"]
+            GX["Great Expectations\n(quality gates)"]
+        end
+
+        subgraph Streaming["Streaming Profile"]
+            KAFKA["Apache Kafka\nport 9092"]
+            PROD["Streaming\nProducer"]
+        end
+    end
+
+    BROWSER --> NGINX
+    NGINX -->|"/api/*"| API
+    API --> PG
+    CLI --> PG
+    KAGGLE -->|"kaggle CLI"| PY_T
+    KAGGLE -->|"kaggle CLI"| PY_N
+    PY_T --> PG
+    PY_N --> PG
+    AIR -->|"runs"| PY_T
+    AIR -->|"runs"| PY_N
+    AIR -->|"runs after ingest"| GX
+    GX -->|"gates"| DBT
+    DBT --> PG
+    PY_N -->|"simulated stream"| KAFKA
+    PROD --> KAFKA
+```
 
 ---
 
@@ -21,77 +106,36 @@ Production-shaped proof-of-concept data platform demonstrating end-to-end workfl
 
 ---
 
-## Prerequisites
+## Quick Start
 
-| Tool | Version | Install |
-|---|---|---|
-| Docker Desktop | Latest | https://www.docker.com/products/docker-desktop |
-| Node.js | 20+ | `brew install node` |
-| Python | 3.11+ | `brew install python@3.11` *(pipelines only)* |
-| psql | Any | `brew install libpq && brew link --force libpq` *(optional)* |
-| nvm (optional) | Any | Reads `.nvmrc` automatically; run `nvm use` |
-
----
-
-## Quick start
-
-### 1. Clone and configure
+Get the platform running locally in minutes. For detailed requirements and troubleshooting, see the [Full Quick Start Guide](docs/guides/quick-start.md).
 
 ```bash
-git clone <your-repo-url>
-cd poc-repo
-cp .env.example .env          # defaults work out of the box
-```
+# 1. Setup Environment
+cp .env.example .env
 
-### 2. Start Postgres
-
-```bash
+# 2. Start Database
 docker compose up -d postgres
-docker compose ps             # wait until status shows "healthy"
-```
 
-Migrations in `db/migrations/` run automatically on first startup.
-
-### 3. Load sample data
-
-```bash
-# Install dependencies for each Node service (no legacy flags required)
+# 3. Seed Sample Data (Titanic subset)
 cd web/server && npm install
 cd ../client && npm install
-cd ../../app && npm install
+cd ../../app && npm install && npx ts-node src/index.ts seed
 
-# Seed sample data via the CLI
-cd ../app
-npx ts-node src/index.ts seed
+# 4. Launch Full Stack (Dockerized)
 cd ..
-```
-
-### 4. Launch the web app
-
-**Option A — Fully Dockerized (recommended)**
-```bash
 docker compose --profile web up --build
 ```
-
-**Option B — Local dev mode (hot reload)**
-```bash
-./dev.sh
-```
-
-Then open:
-- **Dashboard UI** → http://localhost:3000
-- **REST API (Data)** → http://localhost:3001/api/titanic
-- **Swagger docs** → http://localhost:3001/docs
+**Dashboard:** http://localhost:3000 | **API Docs:** http://localhost:3001/docs
 
 ---
 
-## Using the TypeScript CLI
+## Detailed Usage
 
-The CLI is separate from the web app and useful for quick data exploration and scripting.
-
+### TypeScript CLI
+The CLI is used for terminal-based data exploration and administration.
 ```bash
 cd app
-
 npx ts-node src/index.ts ping                    # check DB connection
 npx ts-node src/index.ts tables                  # list all tables + row counts
 npx ts-node src/index.ts seed                    # load sample data
