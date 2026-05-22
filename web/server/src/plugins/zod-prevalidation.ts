@@ -6,12 +6,10 @@ const zodPrevalidation: FastifyPluginAsync = async (fastify) => {
   // Ensure any __zod metadata provided on route options or inside schema is preserved on route config
   fastify.addHook('onRoute', (routeOptions: any) => {
     const hasMeta = !!(routeOptions && (routeOptions.__zod || (routeOptions.schema && routeOptions.schema.__zod)));
-    console.log(`zod-prevalidation:onRoute: registered route ${routeOptions?.url || routeOptions?.path || '<unknown>'}, hasMeta=${hasMeta}`);
     const meta = (routeOptions && (routeOptions.__zod || (routeOptions.schema && routeOptions.schema.__zod))) || undefined;
     if (meta) {
       routeOptions.config = routeOptions.config || {};
       routeOptions.config.__zod = meta;
-      console.log(`zod-prevalidation:onRoute: attached meta for route ${routeOptions?.url || routeOptions?.path || '<unknown>'}`);
     }
   });
 
@@ -25,9 +23,6 @@ const zodPrevalidation: FastifyPluginAsync = async (fastify) => {
     if (!meta) return;
 
     try {
-      // DEBUG: report presence of meta keys
-      console.log(`zod-prevalidation: routeMeta keys: ${meta ? Object.keys(meta).join(',') : 'none'}`);
-
       // validate body
       if (meta.body && (request.body !== undefined)) {
         const zodSchema = meta.body as ZodTypeAny | undefined;

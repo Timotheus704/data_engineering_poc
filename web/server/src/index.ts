@@ -97,8 +97,8 @@ async function start() {
   try {
     const fastify = await build();
     await fastify.listen({ port: PORT, host: HOST });
-    console.log(`\n🚀 API running at http://localhost:${PORT}`);
-    console.log(`📖 Swagger docs at http://localhost:${PORT}/docs\n`);
+    fastify.log.info(`\n🚀 API running at http://localhost:${PORT}`);
+    fastify.log.info(`\n📖 Swagger docs at http://localhost:${PORT}/docs\n`);
   } catch (err) {
     console.error(err);
     process.exit(1);
