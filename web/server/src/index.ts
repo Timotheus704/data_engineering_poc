@@ -1,3 +1,7 @@
+import * as dotenv from 'dotenv';
+// Initialize environment variables before anything else so that 
+// tracing and other modules can use them during initialization.
+dotenv.config();
 
 import { initTracing } from './tracing';
 initTracing();
