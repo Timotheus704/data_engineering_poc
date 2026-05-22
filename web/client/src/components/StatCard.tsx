@@ -1,14 +1,44 @@
-interface Props { label: string; value: string | number; sub?: string; color?: string; }
+import { tokens, presets } from '../styles/tokens';
 
-export default function StatCard({ label, value, sub, color = '#3b82f6' }: Props) {
+interface Props {
+  label: string;
+  value: string | number;
+  sub?: string;
+  color?: string;
+}
+
+export default function StatCard({ label, value, sub, color = tokens.color.accent.blue }: Props) {
   return (
     <div style={{
-      background: '#161b27', border: '1px solid #1e2a3a', borderRadius: 12,
-      padding: '20px 24px', minWidth: 160,
+      ...presets.card,
+      padding: `${tokens.spacing['2xl']}px`,
+      minWidth: 160,
     }}>
-      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{sub}</div>}
+      <div style={{
+        fontSize: tokens.fontSize.xs,
+        color: tokens.color.text.muted,
+        marginBottom: tokens.spacing.sm,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 28,
+        fontWeight: tokens.fontWeight.bold,
+        color,
+      }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{
+          fontSize: tokens.fontSize.sm,
+          color: tokens.color.text.disabled,
+          marginTop: tokens.spacing.xs,
+        }}>
+          {sub}
+        </div>
+      )}
     </div>
   );
 }

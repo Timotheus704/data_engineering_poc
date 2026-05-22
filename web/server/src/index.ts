@@ -1,3 +1,6 @@
+import { initTracing } from './tracing';
+initTracing();
+
 import Fastify from 'fastify';
 import { ZodTypeProvider, serializerCompiler, validatorCompiler } from '@fastify/type-provider-zod';
 import cors from '@fastify/cors';

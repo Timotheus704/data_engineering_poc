@@ -1,3 +1,7 @@
+// Design tokens are in src/styles/tokens.ts
+// All colors, spacing, and style presets should come from there.
+// Never hardcode color values directly in component files.
+
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { Ship, Car, Shield, LayoutDashboard, Database } from 'lucide-react';
 import Dashboard from './pages/Dashboard';

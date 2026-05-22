@@ -136,3 +136,12 @@ When you add a new configuration value:
 **For CI secrets**, store them in GitHub repository secrets (Settings → Secrets and variables → Actions) and reference them as `${{ secrets.MY_VAR }}`. The current CI workflows use hardcoded test credentials because the CI database has no real data.
 
 **Kaggle credentials** live at `~/.kaggle/kaggle.json` on your Mac and are mounted into pipeline containers as a read-only bind mount at `/root/.kaggle/kaggle.json`. They are never copied into a Docker image or any source file.
+
+---
+
+### Observability (OpenTelemetry)
+
+| Variable | Default | Used by | Description |
+|---|---|---|---|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | Fastify API | If set, traces are sent to this OTLP collector endpoint (e.g. `http://localhost:4318`). If unset, traces are printed to the console in development. |
+| `NODE_ENV` | — | Fastify API | When set to `production`, switches from console to OTLP exporter (requires `OTEL_EXPORTER_OTLP_ENDPOINT`). |

@@ -150,6 +150,37 @@ This keeps the original PoC simple while demonstrating the production pattern: p
 
 ---
 
+## Streaming Demo (Kafka)
+
+Beyond batch processing, the platform demonstrates event-driven architecture using **Apache Kafka** and **Zookeeper**. This simulation mimics a real-time taxi dispatch system.
+
+### 1. Start the Infrastructure
+The streaming stack is resource-intensive and is isolated under a specific Docker Compose profile:
+
+```bash
+docker compose --profile streaming up -d
+```
+
+### 2. Run the Producer
+The producer simulates a live feed by reading historical taxi data and streaming it as JSON events.
+
+```bash
+cd pipelines/streaming
+python producer.py --rate 5  # Streams 5 events per second
+```
+
+### 3. Run the Consumer
+The consumer consumes events from the `taxi.trips.raw` topic and persists them to the database, showing how to bridge streaming data into a relational store.
+
+```bash
+cd pipelines/streaming
+python consumer.py
+```
+
+For a deeper dive into the streaming architecture, see pipelines/streaming/README.md.
+
+---
+
 ## What This Demonstrates
 
 This scaffold is meant to show senior data engineering instincts:
