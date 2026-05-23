@@ -60,5 +60,3 @@ The `environments/prod/` directory intentionally contains only a README that exp
 - This repo is a reference implementation. Treat `dev/` examples as starting points, not production automation.
 
 ---
-
-If you want, confirm and I will stage this change for commit and suggest a Conventional Commit message (docs: infra README).
