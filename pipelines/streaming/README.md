@@ -31,10 +31,23 @@ graph LR
 *   **Consistent Partitioning:** Events are keyed by `vendor_id`. In a multi-partition Kafka setup, this ensures that all events for a specific taxi vendor are processed in strict chronological order.
 *   **Realistic Event Schemas:** Transformation of tabular CSV data into a nested JSON structure with event metadata (e.g., `event_type`, `event_time`).
 
+## Scope
+
+This module currently implements the **producer only**. The full production design — including the consumer, schema registry integration, and GCP Pub/Sub as a managed alternative — is documented in the architecture decision record:
+
+📄 **[`docs/decisions/007-streaming-architecture.md`](../../docs/decisions/007-streaming-architecture.md)**
+
+That document covers:
+- Kafka topic design and partition key rationale
+- Consumer group design and responsibilities
+- Schema evolution strategy
+- When to use Kafka vs. GCP Pub/Sub
+- What the consumer would do: validate events, deduplicate on `source_row_hash`, write to staging
+
 ## Getting Started
 
 ### 1. Start the Infrastructure
-Kafka and Zookeeper are managed via the `streaming` Docker Compose profile.
+The streaming stack is resource-intensive and is isolated under a specific Docker Compose profile.
 
 ```bash
 docker compose --profile streaming up -d
@@ -59,4 +72,4 @@ docker exec -it poc_kafka kafka-console-consumer \
 ```
 
 ---
-*This is a sub-module of the Data Platform PoC.*
+*This is a sub-module of the Data Platform PoC. See the [root README](../../README.md) for the full architecture.*
