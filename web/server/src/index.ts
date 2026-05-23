@@ -1,18 +1,25 @@
+// ─── Environment must be configured FIRST, before any other imports ──────────
+// dotenv.config() must run before tracing initialization because OpenTelemetry
+// reads OTEL_EXPORTER_OTLP_ENDPOINT and NODE_ENV from process.env at startup.
+// If dotenv hasn't run yet, those values are undefined and tracing falls back
+// to console output even in production. This ordering is intentional.
 import * as dotenv from 'dotenv';
-// Initialize environment variables before anything else so that 
-// tracing and other modules can use them during initialization.
 dotenv.config();
 
+// ─── Tracing must be initialized before Fastify and pg ───────────────────────
+// OpenTelemetry auto-instrumentation works by patching modules at import time.
+// If Fastify or pg are imported before initTracing(), their HTTP and database
+// calls won't be captured in traces. Order matters here.
 import { initTracing } from './tracing';
 initTracing();
 
+// ─── Application imports (order matters less after this point) ───────────────
 import Fastify from 'fastify';
 import { ZodTypeProvider, serializerCompiler, validatorCompiler } from '@fastify/type-provider-zod';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ZodError, type ZodTypeAny } from 'zod';
-import * as dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
 
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -25,34 +32,25 @@ import titanicRoutes from './routes/titanic';
 import taxiRoutes from './routes/nyc_taxi';
 import adminRoutes from './routes/admin';
 import validationHandler from './plugins/validation-handler';
-
 import metricsRoutes from './routes/metrics';
-
-dotenv.config();
 
 const PORT = parseInt(process.env.PORT ?? '3001');
 const HOST = process.env.HOST ?? '0.0.0.0';
 
 /**
- * zod-to-json-schema is runtime-safe with real Zod schemas, but its TypeScript input type
- * does not always line up with the Zod types present in a workspace (monorepos and lockfile
- * graphs commonly create duplicate type identities for the same library).
+ * zodToJsonSchema boundary cast
+ * ─────────────────────────────
+ * zod-to-json-schema's declared parameter type can diverge from the Zod schema
+ * types in this workspace due to dependency graph / type identity duplication in
+ * monorepos. The cast is localized here so the rest of the codebase stays clean.
  *
- * We intentionally centralize the cast at this boundary so:
- * - the rest of the codebase stays aligned with the no-`any` policy
- * - any risk is localized to the Zod → JSON Schema interop edge
- *
- * Exit condition: if/when zod-to-json-schema’s declared parameter type aligns cleanly with
- * our Zod version (or we dedupe Zod so type identity unifies), this helper can become a direct
- * call with no casts and the eslint-disable can be removed.
+ * Exit condition: when zod-to-json-schema's TS signature aligns with our Zod
+ * version, remove the cast and this comment.
  */
 type JsonSchemaWithExample = ReturnType<typeof zodToJsonSchema> & { example?: unknown };
 
 function toJsonSchema(schema: ZodTypeAny): JsonSchemaWithExample {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Boundary cast:
-  // zod-to-json-schema’s TS signature can disagree with the Zod schema types in this workspace
-  // (most often due to dependency graph / type identity duplication). Runtime is safe because we
-  // pass real Zod schemas; this cast exists only to bridge library typing at this integration point.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0]) as JsonSchemaWithExample;
 }
 
@@ -65,28 +63,27 @@ export async function build() {
           ? { target: 'pino-pretty', options: { colorize: true } }
           : undefined,
     },
-    // Use UUIDs as request IDs for globally unique correlation
     genReqId: () => randomUUID(),
-    // Label used in logs to surface the request id consistently
     requestIdLogLabel: 'requestId',
   }).withTypeProvider<ZodTypeProvider>();
 
-  // Use Zod for request validation and response serialization
   fastify.setValidatorCompiler(validatorCompiler);
   fastify.setSerializerCompiler(serializerCompiler);
 
-  // ── CORS ──────────────────────────────────────────────────────────────────
+  // ── CORS ────────────────────────────────────────────────────────────────────
   await fastify.register(cors, {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
-  // Add X-Request-Id header to every response for correlation
+  // ── Request correlation ──────────────────────────────────────────────────────
+  // X-Request-Id is added to every response so clients and server logs can be
+  // correlated. In production this would become an OpenTelemetry trace ID.
   fastify.addHook('onSend', async (request, reply) => {
     reply.header('X-Request-Id', request.id);
   });
 
-  // ── Swagger / OpenAPI ─────────────────────────────────────────────────────
+  // ── Swagger / OpenAPI ────────────────────────────────────────────────────────
   const componentsSchemas: Record<string, JsonSchemaWithExample> = {
     TitanicCreate: toJsonSchema(titanicCreateSchema),
     TitanicResponse: toJsonSchema(titanicResponseSchema),
@@ -96,39 +93,32 @@ export async function build() {
     AdminQueryResponse: toJsonSchema(adminQueryResponseSchema),
   };
 
-  // add minimal examples so Swagger UI shows a quick sample
   componentsSchemas.TitanicCreate.example = {
-    survived: 1,
-    pclass: 3,
-    name: 'John Doe',
-    sex: 'male',
-    age: 30,
+    survived: 1, pclass: 3, name: 'John Doe', sex: 'male', age: 30,
   };
   componentsSchemas.TitanicResponse.example = {
-    id: 1,
-    ...(componentsSchemas.TitanicCreate.example as object),
+    id: 1, ...(componentsSchemas.TitanicCreate.example as object),
     loaded_at: new Date().toISOString(),
   };
-
   componentsSchemas.TaxiCreate.example = {
-    passenger_count: 1,
-    trip_distance: 2.3,
-    fare_amount: 8.5,
+    passenger_count: 1, trip_distance: 2.3, fare_amount: 8.5,
   };
   componentsSchemas.TaxiResponse.example = {
-    id: 1,
-    ...(componentsSchemas.TaxiCreate.example as object),
+    id: 1, ...(componentsSchemas.TaxiCreate.example as object),
     loaded_at: new Date().toISOString(),
   };
-
   componentsSchemas.AdminQuery.example = { sql: 'SELECT 1' };
   componentsSchemas.AdminQueryResponse.example = { data: [{ hello: 'world' }], row_count: 1 };
 
   await fastify.register(swagger, {
     openapi: {
-      info: { title: 'PoC Data API', version: '1.0.0', description: 'REST API for the PoC data platform' },
+      info: {
+        title: 'PoC Data API',
+        version: '1.0.0',
+        description: 'REST API for the PoC data platform',
+      },
       servers: [{ url: `http://localhost:${PORT}` }],
-      components: { schemas: componentsSchemas as any },
+      components: { schemas: componentsSchemas as any }, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
   });
 
@@ -138,8 +128,6 @@ export async function build() {
   });
 
   await fastify.register(metricsRoutes);
-
-  // ── Register validation error handler ───────────
   await fastify.register(validationHandler);
 
   fastify.setErrorHandler((error, _request, reply) => {
@@ -153,7 +141,7 @@ export async function build() {
     reply.send(error);
   });
 
-  // ── Routes ────────────────────────────────────────────────────────────────
+  // ── Routes ───────────────────────────────────────────────────────────────────
   await fastify.register(healthRoutes);
   await fastify.register(titanicRoutes, { prefix: '/api' });
   await fastify.register(taxiRoutes, { prefix: '/api' });
@@ -166,8 +154,8 @@ async function start() {
   try {
     const fastify = await build();
     await fastify.listen({ port: PORT, host: HOST });
-    fastify.log.info(`\n🚀 API running at http://localhost:${PORT}`);
-    fastify.log.info(`\n📖 Swagger docs at http://localhost:${PORT}/docs\n`);
+    fastify.log.info(`API running at http://localhost:${PORT}`);
+    fastify.log.info(`Swagger docs at http://localhost:${PORT}/docs`);
   } catch (err) {
     console.error(err);
     process.exit(1);
