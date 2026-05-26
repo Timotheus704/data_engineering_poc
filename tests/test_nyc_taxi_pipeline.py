@@ -239,4 +239,3 @@ class TestSourceRowHash:
             "Rows with different values must produce different source_row_hash values. "
             "If this fails, distinct trips are being collapsed into the same record."
         )
-        
