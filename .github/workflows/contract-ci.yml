@@ -131,8 +131,7 @@ jobs:
         working-directory: dbt
         run: |
           dbt deps --profiles-dir .
-          dbt parse --profiles-dir .
-          dbt test --profiles-dir .
+          dbt build --profiles-dir .
 
       - name: Install and test CLI app
         working-directory: app
