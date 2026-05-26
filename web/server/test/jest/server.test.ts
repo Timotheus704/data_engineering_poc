@@ -1,7 +1,9 @@
 import request from 'supertest';
 
 // Mock tracing to prevent OpenTelemetry initialization errors in the Jest environment
-jest.mock('../../src/tracing', () => ({}));
+jest.mock('../../src/tracing', () => ({
+  initTracing: jest.fn(),
+}));
 
 import { build } from '../../src/index';
 
