@@ -9,6 +9,25 @@ on:
 # Node.js version policy: must match node:20-alpine used in all Dockerfiles.
 # If you update the Docker base image, update this version too.
 jobs:
+  cli-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies (app)
+        working-directory: app
+        run: npm ci
+
+      - name: Build CLI (app)
+        working-directory: app
+        run: npm run build
+
   web-server:
     runs-on: ubuntu-latest
     strategy:
