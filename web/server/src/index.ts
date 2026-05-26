@@ -21,6 +21,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { ZodError, type ZodTypeAny } from 'zod';
 import { randomUUID } from 'crypto';
+import type { OpenAPIV3 } from 'openapi-types';
 
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { titanicCreateSchema, titanicResponseSchema } from './schemas/titanic';
@@ -47,11 +48,13 @@ const HOST = process.env.HOST ?? '0.0.0.0';
  * Exit condition: when zod-to-json-schema's TS signature aligns with our Zod
  * version, remove the cast and this comment.
  */
-type JsonSchemaWithExample = ReturnType<typeof zodToJsonSchema> & { example?: unknown };
+type JsonSchemaWithExample = OpenAPIV3.SchemaObject & { example?: unknown };
 
 function toJsonSchema(schema: ZodTypeAny): JsonSchemaWithExample {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  return zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0]) as JsonSchemaWithExample;
+  return zodToJsonSchema(
+    schema as unknown as Parameters<typeof zodToJsonSchema>[0]
+  ) as unknown as JsonSchemaWithExample;
 }
 
 export async function build() {
@@ -118,7 +121,7 @@ export async function build() {
         description: 'REST API for the PoC data platform',
       },
       servers: [{ url: `http://localhost:${PORT}` }],
-      components: { schemas: componentsSchemas as any }, // eslint-disable-line @typescript-eslint/no-explicit-any
+      components: { schemas: componentsSchemas },
     },
   });
 

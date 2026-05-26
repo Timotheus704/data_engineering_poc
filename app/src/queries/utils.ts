@@ -1,4 +1,4 @@
-import { query } from '../db/client';
+import { query, runReadOnlyQuery } from '../db/client';
 import type { TableInfo } from '../db/types';
 
 /** List all tables in staging and analytics schemas with row counts */
@@ -26,9 +26,5 @@ export async function pingDatabase(): Promise<string> {
 
 /** Run an arbitrary read-only SQL statement (SELECT only) */
 export async function runRawQuery(sql: string): Promise<Record<string, unknown>[]> {
-  const trimmed = sql.trim().toUpperCase();
-  if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('WITH')) {
-    throw new Error('runRawQuery only accepts SELECT or WITH (CTE) statements for safety.');
-  }
-  return query(sql);
+  return runReadOnlyQuery(sql);
 }

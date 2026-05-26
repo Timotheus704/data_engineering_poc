@@ -36,6 +36,8 @@ These five variables configure how every service connects to Postgres.
 | `POSTGRES_DB` | `poc_db` | Postgres image, CLI, API, Pipelines | Database name to connect to |
 | `POSTGRES_HOST` | `postgres` | CLI, API, Pipelines | Hostname for Postgres |
 | `POSTGRES_PORT` | `5432` | CLI, API, Pipelines | Port Postgres listens on |
+| `POSTGRES_READONLY_USER` | `poc_readonly` | CLI query, API admin query | Read-only role for ad hoc inspection SQL |
+| `POSTGRES_READONLY_PASSWORD` | `poc_readonly_password` | CLI query, API admin query | Local-only password for the read-only role |
 
 **About `POSTGRES_HOST` — this is the most commonly misunderstood variable:**
 
@@ -89,6 +91,10 @@ POSTGRES_PASSWORD=poc_password
 POSTGRES_DB=poc_db
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
+
+# Read-only inspection role for CLI query and /api/admin/query
+POSTGRES_READONLY_USER=poc_readonly
+POSTGRES_READONLY_PASSWORD=poc_readonly_password
 
 # Used by the TypeScript app and API when running locally (outside Docker)
 # DB_HOST=localhost

@@ -130,7 +130,15 @@ def ingest_full_refresh(df: pd.DataFrame) -> int:
     engine = get_engine()
     with engine.begin() as conn:
         conn.exec_driver_sql(f"TRUNCATE {SCHEMA}.{TABLE} RESTART IDENTITY")
-    df[INGEST_COLUMNS].to_sql(TABLE, engine, schema=SCHEMA, if_exists="append", index=False, method="multi", chunksize=1000)
+    df[INGEST_COLUMNS].to_sql(
+        TABLE,
+        engine,
+        schema=SCHEMA,
+        if_exists="append",
+        index=False,
+        method="multi",
+        chunksize=1000,
+    )
     print(f"[nyc_taxi] Inserted {len(df):,} rows into {SCHEMA}.{TABLE}")
     return len(df)
 

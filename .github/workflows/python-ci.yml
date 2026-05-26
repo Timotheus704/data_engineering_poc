@@ -52,8 +52,8 @@ jobs:
             echo "No requirements files or pyproject.toml found; installing minimal tooling only." >&2
           fi
 
-          # CI tooling (permissive lint + tests)
-          pip install flake8 pylint pytest sqlalchemy
+          # CI tooling
+          pip install flake8 pylint -r requirements-dev.txt
 
       - name: Compile pipeline files
         shell: bash
@@ -71,13 +71,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Prefer flake8 because it is fast and easy to make permissive.
-          # --exit-zero ensures lint findings do not fail CI (PoC-friendly).
+          # Prefer flake8 because it is fast and explicit.
           if command -v flake8 >/dev/null 2>&1; then
-            flake8 .               --exit-zero               --max-line-length=120               --extend-ignore=E203,W503               --max-complexity=20
+            flake8 .               --max-line-length=120               --extend-ignore=E203,W503               --max-complexity=20
           else
             # Fallback to pylint if flake8 isn't available
-            pylint . --exit-zero || true
+            pylint .
           fi
 
       - name: Unit tests

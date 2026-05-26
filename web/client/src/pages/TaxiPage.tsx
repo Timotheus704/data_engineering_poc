@@ -30,7 +30,7 @@ export default function TaxiPage() {
     try {
       const res = await taxiApi.list({ limit: PAGE_SIZE, offset: (p - 1) * PAGE_SIZE });
       setData(res.data); setTotal(res.total);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [page]);
 
@@ -47,7 +47,7 @@ export default function TaxiPage() {
       if (modal === 'create') await taxiApi.create(form);
       else if (modal === 'edit' && selected) await taxiApi.update(selected.id, form);
       closeModal(); load(page);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
 
@@ -55,7 +55,7 @@ export default function TaxiPage() {
     if (!selected) return;
     setSaving(true);
     try { await taxiApi.delete(selected.id); closeModal(); load(page); }
-    catch (e: any) { setError(e.message); }
+    catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
 

@@ -1,0 +1,8 @@
+{
+  "name": "@data-engineering-poc/read-only-sql",
+  "version": "1.0.0",
+  "description": "Shared read-only SQL validation for local inspection surfaces.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "private": true
+}

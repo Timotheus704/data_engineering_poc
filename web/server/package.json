@@ -12,6 +12,7 @@
     "test:integration": "npm run build && node test/integration_tests.js"
   },
   "dependencies": {
+    "@data-engineering-poc/read-only-sql": "file:../../packages/read-only-sql",
     "@fastify/cors": "^11.2.0",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.0.0",

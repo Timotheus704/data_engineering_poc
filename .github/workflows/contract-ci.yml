@@ -1,0 +1,153 @@
+name: contract-ci
+
+on:
+  pull_request:
+    paths:
+      - 'app/src/queries/**'
+      - 'app/test/**'
+      - 'db/migrations/**'
+      - 'dbt/**'
+      - 'DEVELOPER_GUIDE.md'
+      - 'CONTRIBUTING.md'
+      - 'docs/architecture/cicd.md'
+      - 'docs/decisions/008-ai-collaboration-model.md'
+      - 'packages/**'
+      - 'pipelines/**'
+      - 'requirements-dev.txt'
+      - 'scripts/check_harness_policy.js'
+      - 'tests/**'
+      - 'web/client/src/**'
+      - 'web/server/src/routes/**'
+      - 'web/server/src/schemas/**'
+      - 'web/server/test/**'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - 'app/src/queries/**'
+      - 'app/test/**'
+      - 'db/migrations/**'
+      - 'dbt/**'
+      - 'DEVELOPER_GUIDE.md'
+      - 'CONTRIBUTING.md'
+      - 'docs/architecture/cicd.md'
+      - 'docs/decisions/008-ai-collaboration-model.md'
+      - 'packages/**'
+      - 'pipelines/**'
+      - 'requirements-dev.txt'
+      - 'scripts/check_harness_policy.js'
+      - 'tests/**'
+      - 'web/client/src/**'
+      - 'web/server/src/routes/**'
+      - 'web/server/src/schemas/**'
+      - 'web/server/test/**'
+      - '.github/workflows/**'
+
+jobs:
+  platform-contract:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: poc_user
+          POSTGRES_PASSWORD: poc_password
+          POSTGRES_DB: poc_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poc_user -d poc_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: poc_user
+      PGPASSWORD: poc_password
+      PGDATABASE: poc_db
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: poc_user
+      POSTGRES_PASSWORD: poc_password
+      POSTGRES_DB: poc_db
+      POSTGRES_READONLY_USER: poc_readonly
+      POSTGRES_READONLY_PASSWORD: poc_readonly_password
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Validate Docker Compose config
+        run: |
+          docker compose config
+          docker compose --profile orchestration --profile transform --profile quality config
+
+      - name: Run harness policy
+        run: node scripts/check_harness_policy.js
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r pipelines/requirements.txt -r requirements-dev.txt flake8
+
+      - name: Compile and lint Python
+        run: |
+          find pipelines -type f -name "*.py" -print0 | xargs -0 -r python -m py_compile
+          flake8 . --max-line-length=120 --extend-ignore=E203,W503 --max-complexity=20
+
+      - name: Run Python tests
+        env:
+          PYTHONPATH: .:${{ github.workspace }}/pipelines
+        run: python -m pytest -q
+
+      - name: Run migrations
+        run: |
+          for f in $(ls db/migrations/*.sql | sort); do
+            echo "Running $f"
+            psql -f "$f"
+          done
+
+      - name: Install dbt
+        run: pip install "dbt-core>=1.6" "dbt-postgres>=1.6"
+
+      - name: Validate dbt
+        working-directory: dbt
+        run: |
+          dbt deps --profiles-dir .
+          dbt parse --profiles-dir .
+          dbt test --profiles-dir .
+
+      - name: Install and test CLI app
+        working-directory: app
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Install and test API server
+        working-directory: web/server
+        env:
+          OTEL_SDK_DISABLED: 'true'
+        run: |
+          npm ci
+          npm test -- --runInBand
+          npm run build
+
+      - name: Build web client
+        working-directory: web/client
+        run: |
+          npm ci
+          npm run build

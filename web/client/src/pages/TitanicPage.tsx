@@ -27,7 +27,7 @@ export default function TitanicPage() {
     try {
       const res = await titanicApi.list({ limit: PAGE_SIZE, offset: (p - 1) * PAGE_SIZE });
       setData(res.data); setTotal(res.total);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [page]);
 
@@ -44,7 +44,7 @@ export default function TitanicPage() {
       if (modal === 'create') await titanicApi.create(form);
       else if (modal === 'edit' && selected) await titanicApi.update(selected.id, form);
       closeModal(); load(page);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
 
@@ -52,7 +52,7 @@ export default function TitanicPage() {
     if (!selected) return;
     setSaving(true);
     try { await titanicApi.delete(selected.id); closeModal(); load(page); }
-    catch (e: any) { setError(e.message); }
+    catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
 

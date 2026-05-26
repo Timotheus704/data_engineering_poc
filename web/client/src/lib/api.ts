@@ -24,8 +24,11 @@ export interface TaxiRow {
   tip_amount: number | null; total_amount: number | null; payment_type: number | null; loaded_at: string;
 }
 export interface TableInfo { schema_name: string; table_name: string; row_count: number; total_size: string; }
+export interface ColumnInfo { column_name: string; data_type: string; is_nullable: string; column_default: string | null; }
 export interface DbInfo { pg_version: string; db_size: string; schemas: string[]; }
 export interface PagedResponse<T> { data: T[]; total: number; limit: number; offset: number; }
+export interface TitanicSummaryRow { pclass: number; sex: string; survival_rate_pct: number | string; }
+export interface TaxiHourlyRow { hour: string; total_trips: number | string; avg_fare_usd: number | string; }
 
 // ── Titanic ───────────────────────────────────────────────────────────────────
 
@@ -36,7 +39,7 @@ export const titanicApi = {
   },
   get:    (id: number) => request<{ data: TitanicRow }>(`/titanic/${id}`),
   stats:  ()           => request<{ totals: Record<string, string>; by_class: Record<string, string>[] }>('/titanic/stats'),
-  summary: ()          => request<{ data: Record<string, unknown>[] }>('/titanic/summary'),
+  summary: ()          => request<{ data: TitanicSummaryRow[] }>('/titanic/summary'),
   create: (body: Partial<TitanicRow>) =>
     request<{ data: TitanicRow }>('/titanic', { method: 'POST', body: JSON.stringify(body) }),
   update: (id: number, body: Partial<TitanicRow>) =>
@@ -54,7 +57,7 @@ export const taxiApi = {
   },
   get:    (id: number) => request<{ data: TaxiRow }>(`/taxi/${id}`),
   stats:  ()           => request<{ data: Record<string, string> }>('/taxi/stats'),
-  hourly: ()           => request<{ data: Record<string, unknown>[] }>('/taxi/hourly'),
+  hourly: ()           => request<{ data: TaxiHourlyRow[] }>('/taxi/hourly'),
   create: (body: Partial<TaxiRow>) =>
     request<{ data: TaxiRow }>('/taxi', { method: 'POST', body: JSON.stringify(body) }),
   update: (id: number, body: Partial<TaxiRow>) =>
@@ -69,7 +72,7 @@ export const adminApi = {
   tables:  () => request<{ data: TableInfo[] }>('/admin/tables'),
   dbInfo:  () => request<DbInfo>('/admin/db-info'),
   columns: (schema: string, table: string) =>
-    request<{ data: Record<string, string>[] }>(`/admin/tables/${schema}/${table}/columns`),
+    request<{ data: ColumnInfo[] }>(`/admin/tables/${schema}/${table}/columns`),
   runQuery: (sql: string) =>
     request<{ data: Record<string, unknown>[]; row_count: number }>('/admin/query', {
       method: 'POST', body: JSON.stringify({ sql }),

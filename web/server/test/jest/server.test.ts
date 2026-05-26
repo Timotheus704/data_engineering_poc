@@ -9,12 +9,14 @@ import { build } from '../../src/index';
 
 jest.mock('../../src/db', () => ({
   query: jest.fn(),
+  runReadOnlyQuery: jest.fn(),
   withTransaction: jest.fn(),
   pool: { end: jest.fn() }
 }));
 
 const db = require('../../src/db');
 const mockQuery = db.query as jest.Mock;
+const mockRunReadOnlyQuery = db.runReadOnlyQuery as jest.Mock;
 
 describe('API Integration Tests', () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -164,6 +166,10 @@ describe('API Integration Tests', () => {
 
   describe('POST /api/admin/query', () => {
     it('returns 400 for non-SELECT SQL', async () => {
+      mockRunReadOnlyQuery.mockRejectedValueOnce(
+        new Error('Only SELECT and read-only WITH statements are permitted.')
+      );
+
       const res = await request(app.server)
         .post('/api/admin/query')
         .send({ sql: 'DROP TABLE staging.titanic' });
@@ -172,14 +178,42 @@ describe('API Integration Tests', () => {
     });
 
     it('returns 400 for INSERT statement', async () => {
+      mockRunReadOnlyQuery.mockRejectedValueOnce(
+        new Error('INSERT is not permitted in read-only SQL.')
+      );
+
       const res = await request(app.server)
         .post('/api/admin/query')
         .send({ sql: 'INSERT INTO staging.titanic VALUES (1)' });
       expect(res.status).toBe(400);
     });
 
+    it('returns 400 for multiple statements after a SELECT', async () => {
+      mockRunReadOnlyQuery.mockRejectedValueOnce(
+        new Error('Only one SQL statement is permitted.')
+      );
+
+      const res = await request(app.server)
+        .post('/api/admin/query')
+        .send({ sql: 'SELECT 1; DROP TABLE staging.titanic' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Only one SQL statement');
+    });
+
+    it('returns 400 for data-modifying CTEs', async () => {
+      mockRunReadOnlyQuery.mockRejectedValueOnce(
+        new Error('DELETE is not permitted in read-only SQL.')
+      );
+
+      const res = await request(app.server)
+        .post('/api/admin/query')
+        .send({ sql: 'WITH deleted AS (DELETE FROM staging.titanic RETURNING *) SELECT * FROM deleted' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('DELETE');
+    });
+
     it('returns 200 for valid SELECT query', async () => {
-      mockQuery.mockResolvedValueOnce([{ count: '891' }]);
+      mockRunReadOnlyQuery.mockResolvedValueOnce([{ count: '891' }]);
 
       const res = await request(app.server)
         .post('/api/admin/query')

@@ -165,9 +165,12 @@ const titanicRoutes: FastifyPluginAsyncZod = async (fastify) => {
     async (req, reply) => {
       const { ids } = req.body;
       if (!ids?.length) return reply.status(400).send({ error: 'ids array required' });
-      const placeholders = ids.map((_: any, i: number) => `$${i + 1}`).join(',');
-      const rows = await query(`DELETE FROM staging.titanic WHERE id IN (${placeholders}) RETURNING id`, ids);
-      return reply.send({ deleted: rows.length, ids: rows.map((r: any) => r.id) });
+      const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+      const rows = await query<{ id: number }>(
+        `DELETE FROM staging.titanic WHERE id IN (${placeholders}) RETURNING id`,
+        ids
+      );
+      return reply.send({ deleted: rows.length, ids: rows.map((r) => r.id) });
     }
   );
 };

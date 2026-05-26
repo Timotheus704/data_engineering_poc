@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { adminApi, TableInfo } from '../lib/api';
+import { adminApi, ColumnInfo, TableInfo } from '../lib/api';
 import { Database, Play, ChevronRight } from 'lucide-react';
 
 export default function AdminPage() {
@@ -10,7 +10,7 @@ export default function AdminPage() {
   const [queryError, setQueryError] = useState('');
   const [running, setRunning]     = useState(false);
   const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null);
-  const [columns, setColumns]     = useState<Record<string, string>[]>([]);
+  const [columns, setColumns]     = useState<ColumnInfo[]>([]);
 
   useEffect(() => {
     Promise.all([adminApi.tables(), adminApi.dbInfo()])
@@ -23,7 +23,7 @@ export default function AdminPage() {
     try {
       const res = await adminApi.runQuery(sql);
       setResults(res.data);
-    } catch (e: any) { setQueryError(e.message); }
+    } catch (e: unknown) { setQueryError(e instanceof Error ? e.message : String(e)); }
     finally { setRunning(false); }
   };
 
@@ -87,7 +87,7 @@ export default function AdminPage() {
                 <span style={{ fontSize: 12, color: '#64748b' }}>{selectedTable.schema_name}.{selectedTable.table_name} — columns</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 14 }}>
-                {columns.map((c: any) => (
+                {columns.map((c) => (
                   <div key={c.column_name} style={{ background: '#0f1117', border: '1px solid #1e2a3a', borderRadius: 6, padding: '5px 10px', fontSize: 12 }}>
                     <span style={{ color: '#94a3b8' }}>{c.column_name}</span>
                     <span style={{ color: '#475569', marginLeft: 6 }}>{c.data_type}</span>

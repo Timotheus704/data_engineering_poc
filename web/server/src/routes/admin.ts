@@ -1,5 +1,5 @@
 import type { FastifyPluginAsyncZod } from '@fastify/type-provider-zod';
-import { query } from '../db';
+import { query, runReadOnlyQuery } from '../db';
 import { adminQuerySchema, adminTableParamsSchema, adminQueryResponseSchema } from '../schemas';
 import { z } from 'zod';
 
@@ -60,12 +60,8 @@ const adminRoutes: FastifyPluginAsyncZod = async (fastify) => {
       const { sql } = req.body;
 
       if (!sql) return reply.status(400).send({ error: 'sql is required' });
-    const trimmed = sql.trim().toUpperCase();
-    if (!trimmed.startsWith('SELECT') && !trimmed.startsWith('WITH')) {
-      return reply.status(400).send({ error: 'Only SELECT and WITH (CTE) statements are permitted' });
-    }
     try {
-      const rows = await query(sql);
+      const rows = await runReadOnlyQuery(sql);
       return reply.send({ data: rows, row_count: rows.length });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Query failed';

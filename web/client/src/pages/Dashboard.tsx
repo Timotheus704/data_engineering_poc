@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 import StatCard from '../components/StatCard';
-import { titanicApi, taxiApi, adminApi } from '../lib/api';
+import { titanicApi, taxiApi, adminApi, TitanicSummaryRow, TaxiHourlyRow } from '../lib/api';
 
 export default function Dashboard() {
   const [titanicStats, setTitanicStats] = useState<Record<string, string> | null>(null);
   const [taxiStats, setTaxiStats] = useState<Record<string, string> | null>(null);
-  const [titanicSummary, setTitanicSummary] = useState<Record<string, unknown>[]>([]);
-  const [taxiHourly, setTaxiHourly] = useState<Record<string, unknown>[]>([]);
+  const [titanicSummary, setTitanicSummary] = useState<TitanicSummaryRow[]>([]);
+  const [taxiHourly, setTaxiHourly] = useState<TaxiHourlyRow[]>([]);
   const [dbInfo, setDbInfo] = useState<{ pg_version: string; db_size: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,12 +29,12 @@ export default function Dashboard() {
 
   if (loading) return <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>Loading dashboard…</div>;
 
-  const chartData = titanicSummary.map((r: any) => ({
+  const chartData = titanicSummary.map((r) => ({
     name: `Class ${r.pclass} ${r.sex}`,
     rate: Number(r.survival_rate_pct),
   }));
 
-  const taxiData = taxiHourly.map((r: any) => ({
+  const taxiData = taxiHourly.map((r) => ({
     hour: new Date(r.hour).toISOString().slice(11, 13) + 'h',
     trips: Number(r.total_trips),
     fare: Number(r.avg_fare_usd),

@@ -4,7 +4,7 @@ export const adminQuerySchema = z.object({ sql: z.string() });
 export const adminTableParamsSchema = z.object({ schema: z.enum(['staging', 'analytics']), table: z.string() });
 
 export const adminQueryResponseSchema = z.object({
-  data: z.array(z.record(z.string(), z.any())),
+  data: z.array(z.record(z.string(), z.unknown())),
   row_count: z.number().int(),
 });
 

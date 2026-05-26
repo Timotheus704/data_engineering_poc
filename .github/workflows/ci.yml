@@ -56,10 +56,6 @@ jobs:
           OTEL_SDK_DISABLED: 'true'
         run: npx jest --config jest.config.ts --runInBand --testTimeout=20000
 
-      - name: Lint (optional)
-        working-directory: web/server
-        run: npm run lint || true
-
   web-client:
     runs-on: ubuntu-latest
     steps:

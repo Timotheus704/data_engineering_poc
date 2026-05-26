@@ -19,11 +19,20 @@ The analogy: CI is like a spell-checker that runs every time you save a document
 ```
 .github/
 └── workflows/
+    ├── ci.yml            ← General app, API, and client build/test matrix
+    ├── contract-ci.yml   ← Cross-layer platform contract and harness checks
     ├── db-migrate.yml    ← Validates and runs SQL migrations
-    └── app-ci.yml        ← Builds and smoke-tests the TypeScript app
+    ├── dbt-ci.yml        ← Validates dbt parse/test against Postgres
+    ├── python-ci.yml     ← Compiles, lints, and tests Python pipelines
+    └── app-ci.yml        ← Builds and smoke-tests the TypeScript CLI app
 ```
 
 GitHub Actions automatically discovers and runs any `.yml` file in `.github/workflows/`.
+
+The contract workflow is intentionally broader than the path-scoped workflows.
+It catches changes that cross repository layers, such as a migration affecting
+dbt, an API schema affecting the client, or documentation drifting away from the
+AI collaboration harness.
 
 ---
 
