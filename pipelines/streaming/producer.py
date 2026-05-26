@@ -1,19 +1,22 @@
 """
-Producer only — see docs/decisions/007-streaming-architecture.md for the full design including consumer, schema registry, and GCP Pub/Sub alternative.
+Streaming Demo — Producer Layer
+================================
+STATUS: Implemented. The consumer layer is specified in ADR 007 and
+intentionally not implemented here. See pipelines/streaming/README.md
+for the full scope rationale.
 
-Streaming Demo Producer
-=======================
-Reads NYC taxi trip data from the CSV and publishes each row as a JSON
-event to a Kafka topic, simulating a real-time taxi dispatch system.
+This producer demonstrates:
+- Event schema design for a real-time taxi dispatch system
+- Production-grade Kafka producer configuration (acks, retries, batching)
+- Partition key strategy (vendor_id) with documented tradeoffs
+- Configurable throughput simulation (--rate flag)
 
-This demonstrates:
-- Kafka producer with a realistic event schema
-- Controlled throughput simulation (--rate flag)
-- Proper Kafka producer configuration (acks, retries)
+Full architecture specification:
+docs/decisions/007-streaming-architecture.md
 
 Usage:
-  python streaming/producer.py --rate 10  # 10 events per second
-  python streaming/producer.py --rate 0   # as fast as possible (for testing)
+  python producer.py --rate 10   # 10 events per second
+  python producer.py --rate 0    # unlimited (testing only)
 """
 import argparse
 import json
