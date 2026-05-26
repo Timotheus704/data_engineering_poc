@@ -1,42 +1,117 @@
-# Production Data Platform Architecture
+# Production Data Platform — Engineering Reference
 
-This repository captures an opinionated set of architectural patterns and conventions for building production-grade data platforms. It serves as both a functional blueprint and a practitioner reference, emphasizing why systems are designed in a particular way—highlighting design rationale, operational trade-offs, and strategies for long-term evolution rather than focusing on specific tools or step-by-step tutorials.
-
-Organized as a modular monorepo, the platform is composed of distinct components—including ingestion pipelines, orchestration, transformation layers, infrastructure, and APIs. Each module is intentionally designed to be independently deployable, reflecting how systems are typically structured at enterprise scale, where these components would reside in separate repositories. While consolidated here for clarity and accessibility, the architecture prioritizes maintainability, scalability, and clear separation of concerns as the system grows.
-
-This project reflects real-world production considerations, focusing on how each layer contributes meaningful value under operational constraints. The goal is to demonstrate adaptable architectural patterns that remain robust across environments and tooling choices.
-
-My core production experience is centered on designing enterprise-scale solutions within the Google Cloud ecosystem, particularly using BigQuery. To make these patterns accessible without requiring a cloud account, the local development stack uses PostgreSQL and Docker. The infra/ directory contains Terraform configurations targeting GCP (including BigQuery, Composer, and Cloud Run), illustrating the intended production deployment and bridging the gap between local development and cloud-native infrastructure.
-
-
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)
-![Python](https://img.shields.io/badge/Python-3.11-green?logo=python)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)
-![Apache Airflow](https://img.shields.io/badge/Airflow-2.9-red?logo=apacheairflow)
-![dbt](https://img.shields.io/badge/dbt-1.8-orange?logo=dbt)
-![Apache Kafka](https://img.shields.io/badge/Kafka-7.6-black?logo=apachekafka)
-![React](https://img.shields.io/badge/React-18-blue?logo=react)
-![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
+> **One contributor. AI-assisted. Production patterns.**
+> This repository demonstrates how a single engineer operating with 
+> a structured AI collaboration model can produce platform-scale 
+> data engineering work that is reviewable, extensible, and 
+> documented to the standard of a high-performing team.
+> The DEVELOPER_GUIDE is the primary artifact. The code is the evidence.
 
 ---
 
-## What This Repo Demonstrates
+## Why This Repo Exists
 
-This repository serves as a showcase for senior-level engineering patterns and modern data platform architecture:
+This repository is a deliberate demonstration of three things:
 
-| Competency | Implementation |
+**1. Engineering judgment at platform scale.**  
+Every architectural decision in this repo is documented before 
+implementation. The ADR collection shows how tradeoffs are reasoned 
+about, not just resolved. Scale and cost considerations, incremental 
+loading strategy, streaming architecture, and infrastructure design 
+are all documented as decisions with context and alternatives 
+considered. Code that exists without a stated reason is a liability. 
+This repo treats that seriously.
+
+**2. Production-shaped patterns, not demo shortcuts.**  
+Incremental loading with persisted watermarks. Idempotent upserts with 
+hash-based deduplication. Data quality gates that block downstream 
+transforms on bad data. Airflow DAGs with retries, backfills, SLA 
+callbacks, and operational metadata. Terraform modules with 
+dataset-level IAM and inline reasoning. These are not tutorial 
+implementations. They are the patterns that survive contact with 
+production.
+
+**3. A working model for AI-assisted engineering at scale.**  
+AI assistance in this repository operates under a contributor model 
+governed by the DEVELOPER_GUIDE. This means ADRs before 
+implementation, human review before commit, and convention enforcement 
+as a constraint rather than a preference. The model is documented in 
+[ADR 008](docs/decisions/008-ai-collaboration-model.md) because it is 
+itself an engineering decision with tradeoffs. The result is a codebase 
+that one engineer produced but that reads like a team maintained it.
+
+---
+
+## Start Here
+
+Read the [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) first. It is an 
+onboard and contribution guide that doubles as the harness 
+governing AI collaboration in this repo. Then read 
+[ADR 006](docs/decisions/006-scale-and-cost-considerations.md) for 
+scale reasoning and 
+[ADR 007](docs/decisions/007-streaming-architecture.md) for 
+distributed systems thinking. The code is evidence that the reasoning 
+was followed.
+
+**If you are evaluating data engineering depth:**  
+Start with `pipelines/nyc_taxi/ingest.py` for incremental loading 
+with watermarks, `orchestration/airflow/dags/data_platform_dag.py` 
+for production-shaped orchestration, and `dbt/models/` for 
+transformation lineage. Then read `docs/decisions/` to understand 
+why each pattern was chosen.
+
+**If you are evaluating platform engineering depth:**  
+Start with `infra/modules/bigquery/main.tf` for infrastructure 
+reasoning, `web/server/src/tracing.ts` for observability patterns, 
+and `db/migrations/` for schema lifecycle management. The Terraform 
+module comments explain why, not just what.
+
+**If you are evaluating AI collaboration practices:**  
+Read [ADR 008](docs/decisions/008-ai-collaboration-model.md) and 
+then the [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md). Then look at the 
+ADR collection in `docs/decisions/` as a whole — each ADR was written 
+before the corresponding implementation, which is the practice the 
+model requires.
+
+---
+
+## What This Demonstrates
+
+| Competency | Implementation | Key Files |
+|---|---|---|
+| **Incremental Loading** | Watermark persistence, idempotent upserts, hash deduplication | `pipelines/nyc_taxi/ingest.py`, `db/migrations/005_create_pipeline_watermarks.sql` |
+| **Data Quality Gates** | Great Expectations blocking dbt on bad staging data | `orchestration/great_expectations/`, `orchestration/airflow/dags/data_platform_dag.py` |
+| **Transformation Lineage** | dbt with sources, refs, schema tests, documented staging models | `dbt/models/`, `dbt/models/sources.yml` |
+| **Production Orchestration** | Airflow with retries, backfills, SLA callbacks, operational metadata | `orchestration/airflow/dags/data_platform_dag.py`, `db/migrations/004_create_orchestration_metadata.sql` |
+| **Infrastructure as Code** | Terraform with dataset-level IAM, service accounts, lifecycle rules | `infra/modules/bigquery/main.tf` |
+| **Scale Reasoning** | Partition strategy, incremental cost curves, workload isolation | [ADR 006](docs/decisions/006-scale-and-cost-considerations.md) |
+| **Distributed Systems Design** | Kafka topic design, consumer group strategy, schema evolution | [ADR 007](docs/decisions/007-streaming-architecture.md) |
+| **Observability** | OpenTelemetry tracing, structured logging, metrics endpoint | `web/server/src/tracing.ts`, `web/server/src/routes/metrics.ts` |
+| **Schema Lifecycle** | Ordered migrations, idempotent DDL, append-only convention | `db/migrations/`, [Migrations Guide](docs/guides/migrations.md) |
+| **AI Collaboration Model** | Contributor model, ADR-first workflow, convention harness | [ADR 008](docs/decisions/008-ai-collaboration-model.md), [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) |
+| **REST API Design** | Zod validation, Swagger docs, correlation IDs, typed interfaces | `web/server/src/routes/`, `web/server/src/schemas/` |
+| **Visualization Layer** | React dashboard with charts, CRUD, admin SQL panel | `web/client/src/` |
+
+---
+
+## How This Maps to Production
+
+This repository runs locally via Docker Compose. The patterns 
+demonstrated here map directly to production cloud infrastructure:
+
+| This repository | Production equivalent |
 |---|---|
-| **Data Pipeline Architecture** | Incremental loading with watermarks, SCD2 dimensions, idempotent upserts |
-| **Data Quality** | Great Expectations validation gates blocking dbt runs on bad data |
-| **Data Transformation** | dbt with sources, refs, schema tests, and documented staging models |
-| **Orchestration** | Airflow DAG with retries, backfills, SLA callbacks, and operational metadata |
-| **Streaming** | Kafka producer/consumer demo simulating real-time event ingestion |
-| **API Design** | Fastify REST API with Zod validation, Swagger docs, and correlation IDs |
-| **Observability** | OpenTelemetry tracing, structured logging, /metrics endpoint |
-| **TypeScript** | Strict typed interfaces, generic query helpers, CLI with Commander |
-| **Infrastructure** | Docker Compose profiles, multi-stage builds, health checks, Dependabot |
-| **Testing** | Unit tests (schemas), integration tests (API routes with mocked DB) |
-| **Documentation** | ADRs, migration guides, architecture diagrams, Swagger UI |
+| Postgres in Docker | BigQuery (analytics) + Cloud SQL (metadata) |
+| Airflow local | Cloud Composer (managed Airflow) |
+| Python pipelines | Cloud Run Jobs + GCS staging |
+| GitHub Actions | Terraform Cloud + Cloud Build |
+| Docker Compose profiles | GKE namespaces or Cloud Run services |
+| Great Expectations | Monte Carlo / Bigeye at scale |
+| dbt local | dbt Cloud with CI/CD |
+
+The Terraform modules in `infra/` target GCP directly and are 
+deployable with credentials. They are not illustrative — they are 
+the production layer of this same architecture.
 
 ---
 
@@ -50,292 +125,128 @@ flowchart TB
     end
 
     subgraph Docker["Docker Compose (Local)"]
-        subgraph Web["Web Profile"]
-            NGINX["nginx\n(React App)\nport 3000"]
-            API["Fastify API\nport 3001\n/docs → Swagger"]
-        end
-
-        subgraph Data["Always Running"]
+        subgraph Data["Core Data Platform"]
             PG[("PostgreSQL 16\nport 5432\nstaging | analytics\norchestration")]
-            CLI["TypeScript CLI\n(ts-node)"]
         end
 
-        subgraph Pipeline["Pipeline Profile"]
+        subgraph Pipeline["Ingestion"]
             PY_T["Python\nTitanic Ingest"]
             PY_N["Python\nNYC Taxi Ingest\n(full + incremental)"]
         end
 
-        subgraph Orchestration["Orchestration Profile"]
+        subgraph Orchestration["Orchestration"]
             AIR["Apache Airflow\nport 8080"]
             DBT["dbt\n(transform)"]
             GX["Great Expectations\n(quality gates)"]
         end
 
-        subgraph Streaming["Streaming Profile"]
+        subgraph Streaming["Streaming (Design)"]
             KAFKA["Apache Kafka\nport 9092"]
-            PROD["Streaming\nProducer"]
+        end
+
+        subgraph Web["Visualization Layer"]
+            NGINX["nginx + React\nport 3000"]
+            API["Fastify API\nport 3001"]
         end
     end
 
-    subgraph GCP["GCP (Production Target)"]
-        GCS[("Cloud Storage")]
-        BQ[("BigQuery")]
-        CSQL[("Cloud SQL")]
-        COMP["Cloud Composer"]
-        CRUN["Cloud Run / Jobs"]
-    end
-
-    BROWSER --> NGINX
-    NGINX -->|"/api/*"| API
-    API --> PG
-    CLI --> PG
-    KAGGLE -->|"kaggle CLI"| PY_T
-    KAGGLE -->|"kaggle CLI"| PY_N
-    PY_T --> PG
-    PY_N --> PG
-    AIR -->|"runs"| PY_T
-    AIR -->|"runs"| PY_N
-    AIR -->|"runs after ingest"| GX
-    GX -->|"gates"| DBT
-    DBT --> PG
-    PY_N -->|"simulated stream"| KAFKA
-    PROD --> KAFKA
-
-    %% Production Mapping
-    Pipeline -.-> CRUN
-    Orchestration -.-> COMP
-    Data -.-> BQ
-    Web -.-> CRUN
-    KAGGLE -.-> GCS
-
-    style External fill:#1e2a3a,color:#94a3b8
-    style Docker fill:#0f1117,color:#94a3b8
-    style Web fill:#162032,color:#94a3b8
-    style Data fill:#162032,color:#94a3b8
-    style Pipeline fill:#162032,color:#94a3b8
-    style Orchestration fill:#162032,color:#94a3b8
-    style Streaming fill:#162032,color:#94a3b8
-    style GCP fill:#1a73e8,color:#fff,stroke-dasharray: 5 5
+    KAGGLE --> PY_T & PY_N
+    PY_T & PY_N --> PG
+    AIR --> PY_T & PY_N
+    AIR --> GX --> DBT --> PG
+    PY_N -.->|"simulated stream"| KAFKA
+    BROWSER --> NGINX --> API --> PG
 ```
-
----
-
-## What's in this repo
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| Database | PostgreSQL 16 (Docker) | Stores all data; two schemas: `staging` and `analytics` |
-| Migrations | Raw SQL + shell loop | Versioned schema changes tracked in `db/migrations/` |
-| Pipelines | Python + pandas | Download Kaggle datasets, clean, and bulk-load into Postgres |
-| Orchestration | Airflow | Schedules ingestion, validation, dbt runs, retries, and backfills |
-| Transformations | dbt | Builds analytics views with lineage, tests, and docs |
-| Data Quality | Great Expectations | Validates staging data before downstream analytics build |
-| CLI App | TypeScript + Node 20 | Terminal interface to query and explore data |
-| CI/CD | GitHub Actions | Runs migrations and TS build checks on every push |
-| Web API | Fastify (TypeScript) | REST API with full CRUD + Swagger docs |
-| Web UI | React + Vite | Dashboard with charts, data tables, CRUD modals, admin panel |
-
-*The web application is a demonstration interface for the data platform. The core engineering work is in `pipelines/`, `dbt/`, `orchestration/`, and `infra/`.*
-
-## How this maps to production
-
-| This repo | Production equivalent |
-|---|---|
-| Postgres in Docker | BigQuery (Analytics) + Cloud SQL (Metadata) |
-| Airflow local | Cloud Composer (Managed Airflow) |
-| Python pipelines | Cloud Run Jobs + GCS staging |
-| GitHub Actions migrations | Terraform Cloud + Cloud Build |
-| Docker Compose profiles | GKE namespaces or Cloud Run services |
 
 ---
 
 ## Quick Start
 
-Get the platform running locally in minutes. For detailed requirements and troubleshooting, see the [Full Quick Start Guide](docs/guides/quick-start.md).
-
 ```bash
-# 1. Setup Environment
+# 1. Setup
 cp .env.example .env
 
-# 2. Start Database
+# 2. Start database
 docker compose up -d postgres
 
-# 3. Seed Sample Data (Titanic subset)
-cd web/server && npm install
-cd ../client && npm install
-cd ../../app && npm install && npx ts-node src/index.ts seed
+# 3. Seed sample data
+cd app && npm install
+npx ts-node src/index.ts seed
 
-# 4. Launch Full Stack (Dockerized)
+# 4. Launch full stack
 cd ..
 docker compose --profile web up --build
 ```
-**Dashboard:** http://localhost:3000 | **API Docs:** http://localhost:3001/docs
+
+**Dashboard:** http://localhost:3000  
+**API Docs:** http://localhost:3001/docs  
+**Full guide:** [docs/guides/quick-start.md](docs/guides/quick-start.md)
 
 ---
 
-## Detailed Usage
+## Running the Data Platform
 
-### TypeScript CLI
-The CLI is used for terminal-based data exploration and administration.
 ```bash
-cd app
-npx ts-node src/index.ts ping                    # check DB connection
-npx ts-node src/index.ts tables                  # list all tables + row counts
-npx ts-node src/index.ts seed                    # load sample data
-
-npx ts-node src/index.ts titanic list            # paginated passenger list
-npx ts-node src/index.ts titanic list --limit 5  # first 5 rows
-npx ts-node src/index.ts titanic summary         # survival rates by class & sex
-
-npx ts-node src/index.ts taxi list               # recent NYC taxi trips
-npx ts-node src/index.ts taxi list --min-fare 20 # trips with fare > $20
-npx ts-node src/index.ts taxi hourly             # hourly analytics view
-
-npx ts-node src/index.ts query "SELECT * FROM analytics.titanic_survival_summary"
-```
-
-See [CLI Reference](docs/reference/cli.md) for all commands and options.
-
----
-
-## Running the data pipelines
-
-Pipelines download real datasets from Kaggle and load them into Postgres.
-
-**Setup (one-time):**
-1. Create a Kaggle account at https://kaggle.com
-2. Go to Account → API → Create New Token → download `kaggle.json`
-3. Place it at `~/.kaggle/kaggle.json`
-4. Accept competition rules at:
-   - https://www.kaggle.com/c/titanic
-   - https://www.kaggle.com/c/new-york-city-taxi-fare-prediction
-
-**Run pipelines:**
-```bash
-# Via Docker (recommended)
+# Pipelines
 docker compose --profile pipeline up pipeline_titanic
 docker compose --profile pipeline up pipeline_nyc_taxi
 
-# Or locally with Python
+# Incremental load
 cd pipelines
-pip install -r requirements.txt
-POSTGRES_HOST=localhost python titanic/ingest.py
-POSTGRES_HOST=localhost python nyc_taxi/ingest.py
 POSTGRES_HOST=localhost python nyc_taxi/ingest.py --mode incremental
-```
 
-Charts are saved to `reports/`. After running, reload the dashboard to see live data.
-
-The NYC Taxi pipeline supports incremental loading with persisted watermarks in `orchestration.pipeline_watermarks`; Airflow uses incremental mode by default.
-
----
-
-## Running orchestration, dbt, and data quality
-
-Start Airflow:
-
-```bash
+# Orchestration (Airflow + dbt + Great Expectations)
 docker compose --profile orchestration up --build
-```
+# UI at http://localhost:8080
 
-Then open Airflow at http://localhost:8080 and trigger the `data_platform_batch` DAG.
-
-Run dbt directly:
-
-```bash
+# Transformations only
 docker compose --profile transform run --rm dbt run --profiles-dir .
 docker compose --profile transform run --rm dbt test --profiles-dir .
-```
 
-Run Great Expectations directly:
-
-```bash
+# Data quality only
 docker compose --profile quality run --rm great_expectations \
   python orchestration/great_expectations/validate.py titanic_staging
 ```
 
-See [Orchestration Guide](docs/guides/orchestration.md) for the full workflow.
-
 ---
 
-## REST API endpoints
+## Key Documentation
 
-The Fastify server exposes the following endpoints (all prefixed `/api`):
-
-### Titanic
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/titanic` | List passengers (supports `limit`, `offset`, `pclass`, `survived`, `sex`) |
-| GET | `/api/titanic/:id` | Get single passenger |
-| GET | `/api/titanic/stats` | Aggregate stats (total, survivors, rate) |
-| GET | `/api/titanic/summary` | Survival breakdown from analytics view |
-| POST | `/api/titanic` | Create passenger |
-| PATCH | `/api/titanic/:id` | Update passenger |
-| DELETE | `/api/titanic/:id` | Delete passenger |
-
-### NYC Taxi
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/taxi` | List trips (supports `limit`, `offset`, `min_fare`, `max_fare`) |
-| GET | `/api/taxi/:id` | Get single trip |
-| GET | `/api/taxi/stats` | Aggregate stats |
-| GET | `/api/taxi/hourly` | Hourly aggregations from analytics view |
-| POST | `/api/taxi` | Create trip |
-| PATCH | `/api/taxi/:id` | Update trip |
-| DELETE | `/api/taxi/:id` | Delete trip |
-
-### Admin
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/admin/tables` | All tables with row counts and sizes |
-| GET | `/api/admin/tables/:schema/:table/columns` | Column metadata for a table |
-| GET | `/api/admin/db-info` | Postgres version, DB size, schemas |
-| POST | `/api/admin/query` | Run a safe read-only SELECT query |
-
-Full interactive docs at http://localhost:3001/docs (Swagger UI).
-
----
-
-## Docker reference
-
-```bash
-# Start Postgres only
-docker compose up -d postgres
-
-# Start the full web app (API + UI)
-docker compose --profile web up --build
-
-# Start a specific pipeline
-docker compose --profile pipeline up pipeline_titanic
-
-# View logs
-docker compose logs -f web_server
-docker compose logs -f postgres
-
-# Stop everything (data preserved)
-docker compose down
-
-# Stop and wipe data (fresh start)
-docker compose down -v
-```
-
----
-
-## Documentation
-
-Full documentation lives in `docs/`. Start at **[docs/INDEX.md](./docs/INDEX.md)**.
-
-| I want to... | Document |
+| Document | What it answers |
 |---|---|
-| Understand the system design | [Architecture Overview](docs/architecture/overview.md) |
-| Learn how the web app is structured | [Web App Guide](docs/guides/web-app.md) |
-| Learn how the database is structured | [Database Design](docs/architecture/database-design.md) |
-| Understand Docker and containers | [Docker & Containers](docs/architecture/docker.md) |
-| Learn how CI/CD works | [CI/CD Pipeline](docs/architecture/cicd.md) |
-| Add a new dataset pipeline | [Adding a Pipeline](docs/guides/adding-a-pipeline.md) |
-| Write a database migration | [Migrations Guide](docs/guides/migrations.md) |
-| Work on the TypeScript CLI | [TypeScript App Guide](docs/guides/typescript-app.md) |
-| See all CLI commands | [CLI Reference](docs/reference/cli.md) |
-| Look up environment variables | [Environment Variables](docs/reference/environment-variables.md) |
+| [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) | How to contribute, conventions, what not to do |
+| [ADR 008 — AI Collaboration Model](docs/decisions/008-ai-collaboration-model.md) | How AI assistance is structured in this repo |
+| [ADR 006 — Scale and Cost](docs/decisions/006-scale-and-cost-considerations.md) | How production scale changes the architecture |
+| [ADR 007 — Streaming Architecture](docs/decisions/007-streaming-architecture.md) | Kafka design, consumer strategy, Pub/Sub alternative |
+| [Architecture Overview](docs/architecture/overview.md) | Full system design and data flow |
+| [Adding a Pipeline](docs/guides/adding-a-pipeline.md) | Step-by-step: new dataset end to end |
+| [API Reference](docs/reference/api.md) | All REST endpoints |
 
-See [DEVELOPER_GUIDE](./DEVELOPER_GUIDE) for AI assistant context and conventions.
+---
+
+## Repository Conventions
+
+This repository follows the contributor model documented in 
+[ADR 008](docs/decisions/008-ai-collaboration-model.md):
+
+- Architectural decisions are documented in `docs/decisions/` 
+  before implementation
+- All contributions follow the [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md)
+- Migrations are append-only and numbered sequentially
+- Every staging table includes `loaded_at TIMESTAMPTZ DEFAULT NOW()`
+- TypeScript is strict — `any` is not used
+- Admin query surfaces are read-only by convention and enforcement
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution 
+workflow.
+
+---
+
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)
+![Python](https://img.shields.io/badge/Python-3.11-green?logo=python)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)
+![Apache Airflow](https://img.shields.io/badge/Airflow-2.9-red?logo=apacheairflow)
+![dbt](https://img.shields.io/badge/dbt-1.8-orange?logo=dbt)
+![Terraform](https://img.shields.io/badge/Terraform-1.x-purple?logo=terraform)
+![React](https://img.shields.io/badge/React-18-blue?logo=react)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
