@@ -12,8 +12,6 @@ the broken contract obvious without reading the implementation.
 from __future__ import annotations
 
 import pandas as pd
-import pytest
-from io import StringIO
 from pathlib import Path
 import sys
 
@@ -241,3 +239,4 @@ class TestSourceRowHash:
             "Rows with different values must produce different source_row_hash values. "
             "If this fails, distinct trips are being collapsed into the same record."
         )
+        

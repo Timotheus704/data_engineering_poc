@@ -105,3 +105,4 @@ if __name__ == '__main__':
                         help='Events per second (default: 5, 0=unlimited)')
     args = parser.parse_args()
     publish_trips(args.rate)
+    
