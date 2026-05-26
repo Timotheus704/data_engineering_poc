@@ -79,6 +79,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Create .env file
+        # Docker Compose requires the .env file to exist as referenced in docker-compose.yml
+        run: cp .env.example .env
+
       - name: Set up Node 20
         uses: actions/setup-node@v6
         with:
