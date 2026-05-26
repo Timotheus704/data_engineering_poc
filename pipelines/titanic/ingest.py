@@ -64,6 +64,7 @@ def load_and_clean() -> pd.DataFrame:
     df["fare"]    = pd.to_numeric(df["fare"], errors="coerce")
     df["cabin"]   = df["cabin"].where(df["cabin"].notna(), None)
     df["embarked"]= df["embarked"].where(df["embarked"].notna(), None)
+    df["embarked"] = df["embarked"].where(df["embarked"].notna(), None)
     print(f"[titanic] Loaded {len(df)} rows, {df['survived'].sum()} survivors")
     return df
 
