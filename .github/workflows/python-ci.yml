@@ -44,10 +44,12 @@ jobs:
 
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
+          elif [ -f pipelines/requirements.txt ]; then
+            pip install -r pipelines/requirements.txt
           elif [ -f pyproject.toml ]; then
             pip install -e .
           else
-            echo "No requirements.txt or pyproject.toml found; installing minimal tooling only." >&2
+            echo "No requirements files or pyproject.toml found; installing minimal tooling only." >&2
           fi
 
           # CI tooling (permissive lint + tests)
