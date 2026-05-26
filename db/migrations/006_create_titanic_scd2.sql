@@ -1,14 +1,16 @@
 -- 006_create_titanic_scd2.sql
--- Demonstration of Type 2 Slowly Changing Dimension (SCD2) pattern.
+-- STATUS: Schema reference implementation. This migration creates the
+-- table structure and convenience views for a Type 2 Slowly Changing
+-- Dimension pattern. Population of this table is intentionally deferred
+-- to a future pipeline implementation.
 --
--- SCD2 Pattern Overview:
--- When a dimension record changes (e.g., a passenger's cabin assignment
--- is corrected), instead of overwriting the existing row we:
---   1. Set the old row's valid_to = now() and is_current = FALSE
---   2. Insert a new row with the updated data, valid_from = now(), is_current = TRUE
+-- Design reference: docs/guides/scd2-pattern.md
+-- Macro reference: dbt/macros/scd2_merge.sql
 --
--- This preserves the full history of every change, enabling time-travel
--- queries: "What did this record look like on January 15th?"
+-- This pattern is documented here to demonstrate SCD2 schema design
+-- without conflating schema lifecycle (migrations) with data lifecycle
+-- (pipelines). In production, a dbt snapshot or a Python pipeline
+-- using the scd2_merge macro would populate this table after ingestion.
 
 CREATE TABLE IF NOT EXISTS analytics.dim_titanic_scd2 (
   -- Surrogate key: unique per row (a passenger can have multiple rows)
