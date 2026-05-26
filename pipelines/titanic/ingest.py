@@ -50,6 +50,10 @@ def load_and_clean() -> pd.DataFrame:
         "PassengerId": "passenger_id",
         "Survived":    "survived",
         "Pclass":      "pclass",
+        "PassengerId": "source_passenger_id",
+        "Survived":    "did_survive",
+        "PassengerId": "source_passenger_id",
+        "Pclass":      "passenger_class_num",
         "Name":        "name",
         "Sex":         "sex",
         "Age":         "age",
@@ -59,12 +63,15 @@ def load_and_clean() -> pd.DataFrame:
         "Fare":        "fare",
         "Cabin":       "cabin",
         "Embarked":    "embarked",
+        "Embarked":    "embarkation_code",
     })
     df["age"]     = pd.to_numeric(df["age"],  errors="coerce")
     df["fare"]    = pd.to_numeric(df["fare"], errors="coerce")
     df["cabin"]   = df["cabin"].where(df["cabin"].notna(), None)
     df["embarked"] = df["embarked"].where(df["embarked"].notna(), None)
     print(f"[titanic] Loaded {len(df)} rows, {df['survived'].sum()} survivors")
+    df["embarkation_code"] = df["embarkation_code"].where(df["embarkation_code"].notna(), None)
+    print(f"[titanic] Loaded {len(df)} rows, {df['did_survive'].sum()} survivors")
     return df
 
 
@@ -88,6 +95,7 @@ def run_analysis(df: pd.DataFrame) -> None:
     fig.suptitle("Titanic — Survival Analysis")
 
     sns.barplot(data=df, x="pclass", y="survived", hue="sex", ax=axes[0])
+    sns.barplot(data=df, x="passenger_class_num", y="did_survive", hue="sex", ax=axes[0])
     axes[0].set_title("Survival Rate by Class & Sex")
     axes[0].set_ylabel("Survival Rate")
 
