@@ -1,3 +1,22 @@
+-- scd2_merge.sql
+-- STATUS: Reference implementation. This macro is not currently called
+-- by any model in this project. It exists to demonstrate the SCD2 merge
+-- pattern and would be invoked as a post-hook on a dbt snapshot model
+-- or called directly from a pipeline that requires Type 2 history tracking.
+--
+-- Design reference: docs/guides/scd2-pattern.md
+-- Schema reference: db/migrations/006_create_titanic_scd2.sql
+--
+-- Example invocation (not active):
+-- {{ scd2_merge(
+--     target_table='analytics.dim_titanic_scd2',
+--     source_relation=ref('stg_titanic'),
+--     natural_key='source_passenger_id',
+--     attribute_columns=['did_survive', 'passenger_class_num', 'full_name',
+--                        'sex', 'age_years', 'family_size', 'fare_gbp',
+--                        'cabin_number', 'embarkation_port']
+-- ) }}
+
 {% macro scd2_merge(
     target_table,
     source_relation,
