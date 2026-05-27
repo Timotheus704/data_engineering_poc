@@ -100,15 +100,15 @@ models:
               quote: false
       - name: vendor_name
         description: "Human-friendly vendor name derived from vendor_id."
-      - name: rate_code_id
+      - name: rate_type
         description: "Numeric rate code identifier."
         tests:
           - accepted_values:
-              values: [1, 2, 3, 4, 5, 6]
-              quote: false
+              values: ['Standard Rate', 'JFK', 'Newark', 'Nassau/Westchester', 'Negotiated Fare', 'Group Ride', 'Unknown']
+              quote: true
       - name: rate_type
         description: "Human-friendly rate code label derived from rate_code_id."
-      - name: payment_type
+      - name: payment_method
         description: "Numeric payment type code from the meter (e.g., 1 = credit card)."
         tests:
           - accepted_values:
