@@ -21,14 +21,16 @@ models:
         description: "Normalized survival flag. True/1 indicates survival; False/0 indicates death. May be null if source value is missing."
         tests:
           - accepted_values:
-              values: [true, false]
-              quote: false
+              arguments:
+                values: [true, false]
+                quote: false
       - name: passenger_class_num
         description: "Passenger travel class as an integer (1 = 1st, 2 = 2nd, 3 = 3rd)."
         tests:
           - accepted_values:
-              values: [1, 2, 3]
-              quote: false
+              arguments:
+                values: [1, 2, 3]
+                quote: false
       - name: passenger_class_name
         description: "Textual passenger class label (e.g., '1st', '2nd', '3rd')."
       - name: full_name
@@ -37,8 +39,9 @@ models:
         description: "Normalized sex value standardized to lowercase (e.g., 'male', 'female')."
         tests:
           - accepted_values:
-              values: ['male', 'female']
-              quote: true
+              arguments:
+                values: ['male', 'female']
+                quote: true
       - name: age_years
         description: "Passenger age in years when available; null when age is not recorded."
       - name: is_age_unknown
@@ -61,8 +64,9 @@ models:
         description: "Embarkation code shorthand (C, Q, S)."
         tests:
           - accepted_values:
-              values: ['C', 'Q', 'S']
-              quote: true
+              arguments:
+                values: ['C', 'Q', 'S']
+                quote: true
 
   - name: stg_nyc_taxi
     description: "Staging model for NYC taxi trips. Normalizes vendor/rate/payment codes, coerces monetary fields to non-negative values, and exposes the pipeline loaded_at timestamp."
@@ -100,15 +104,15 @@ models:
               quote: false
       - name: vendor_name
         description: "Human-friendly vendor name derived from vendor_id."
-      - name: rate_type
+      - name: rate_code_id
         description: "Numeric rate code identifier."
         tests:
           - accepted_values:
-              values: ['Standard Rate', 'JFK', 'Newark', 'Nassau/Westchester', 'Negotiated Fare', 'Group Ride', 'Unknown']
-              quote: true
+              values: [1, 2, 3, 4, 5, 6]
+              quote: false
       - name: rate_type
         description: "Human-friendly rate code label derived from rate_code_id."
-      - name: payment_method
+      - name: payment_type
         description: "Numeric payment type code from the meter (e.g., 1 = credit card)."
         tests:
           - accepted_values:
@@ -130,14 +134,16 @@ models:
         description: "Passenger class numeric bucket (1, 2, or 3)."
         tests:
           - accepted_values:
-              values: [1, 2, 3]
-              quote: false
+              arguments:
+                values: [1, 2, 3]
+                quote: false
       - name: sex
         description: "Sex of passengers in the bucket (male/female)."
         tests:
           - accepted_values:
-              values: ['male', 'female']
-              quote: true
+              arguments:
+                values: ['male', 'female']
+                quote: true
       - name: total_passengers
         description: "Count of passengers in the group."
         tests:
