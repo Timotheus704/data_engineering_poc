@@ -12,8 +12,6 @@ the broken contract obvious without reading the implementation.
 from __future__ import annotations
 
 import pandas as pd
-import pytest
-from io import StringIO
 from pathlib import Path
 import sys
 

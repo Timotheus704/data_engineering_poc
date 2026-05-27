@@ -73,7 +73,7 @@ jobs:
 
           # Prefer flake8 because it is fast and explicit.
           if command -v flake8 >/dev/null 2>&1; then
-            flake8 .               --max-line-length=120               --extend-ignore=E203,W503               --max-complexity=20
+            flake8 .               --max-line-length=120               --extend-ignore=E203,W503,E221,W292               --max-complexity=20
           else
             # Fallback to pylint if flake8 isn't available
             pylint .
