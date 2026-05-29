@@ -1,0 +1,74 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/terraform-ci.yml'
+  pull_request:
+    paths:
+      - 'infra/**'
+
+jobs:
+  validate:
+    name: Validate Terraform modules
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.0"
+
+      # Validate root module
+      - name: Terraform fmt check (root)
+        working-directory: infra
+        run: terraform fmt -check -recursive
+        continue-on-error: false
+
+      - name: Terraform init (root)
+        working-directory: infra
+        run: terraform init -backend=false
+
+      - name: Terraform validate (root)
+        working-directory: infra
+        run: terraform validate
+
+      # Validate bigquery module independently
+      - name: Terraform init (bigquery module)
+        working-directory: infra/modules/bigquery
+        run: terraform init -backend=false
+
+      - name: Terraform validate (bigquery module)
+        working-directory: infra/modules/bigquery
+        run: terraform validate
+
+      # Validate gcs module independently
+      - name: Terraform init (gcs module)
+        working-directory: infra/modules/gcs
+        run: terraform init -backend=false
+
+      - name: Terraform validate (gcs module)
+        working-directory: infra/modules/gcs
+        run: terraform validate
+
+      # Validate iam module independently
+      - name: Terraform init (iam module)
+        working-directory: infra/modules/iam
+        run: terraform init -backend=false
+
+      - name: Terraform validate (iam module)
+        working-directory: infra/modules/iam
+        run: terraform validate
+
+      # Validate dev environment
+      - name: Terraform init (dev environment)
+        working-directory: infra/environments/dev
+        run: terraform init -backend=false
+
+      - name: Terraform validate (dev environment)
+        working-directory: infra/environments/dev
+        run: terraform validate
