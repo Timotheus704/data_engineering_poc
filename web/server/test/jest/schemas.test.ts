@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { titanicCreateSchema, titanicUpdateSchema } from '../../src/schemas/titanic';
 import { taxiCreateSchema } from '../../src/schemas/nyc_taxi';
 import { adminQuerySchema } from '../../src/schemas/admin';
