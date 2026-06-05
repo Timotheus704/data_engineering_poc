@@ -29,7 +29,7 @@ models:
         tests:
           - accepted_values:
               arguments:
-                values: [1, 2, 3, null]
+                values: [1, 2, 3]
                 quote: false
       - name: passenger_class_name
         description: "Textual passenger class label (e.g., '1st', '2nd', '3rd')."
