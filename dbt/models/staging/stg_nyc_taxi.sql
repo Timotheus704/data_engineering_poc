@@ -62,6 +62,7 @@ cleaned AS (
     END                                             AS dropoff_latitude,
 
     -- Rate code: expand to name
+    rate_code_id,
     CASE rate_code_id
       WHEN 1 THEN 'Standard Rate'
       WHEN 2 THEN 'JFK'
@@ -73,6 +74,7 @@ cleaned AS (
     END                                             AS rate_type,
 
     -- Payment type: expand to name
+    payment_type,
     CASE payment_type
       WHEN 1 THEN 'Credit Card'
       WHEN 2 THEN 'Cash'
