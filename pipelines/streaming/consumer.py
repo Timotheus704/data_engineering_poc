@@ -29,19 +29,18 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
-import hashlib
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
+from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from db import get_engine
-from sqlalchemy import text
+from db import get_engine  # noqa: E402
 
 KAFKA_BOOTSTRAP_SERVERS = ['localhost:9092']
 TOPIC_RAW = 'taxi.trips.raw'
@@ -340,7 +339,7 @@ def consume(max_messages: Optional[int] = None) -> None:
                 break
 
     except KeyboardInterrupt:
-        print(f"\n[consumer] Stopped by user")
+        print("\n[consumer] Stopped by user")
 
     finally:
         consumer.close()

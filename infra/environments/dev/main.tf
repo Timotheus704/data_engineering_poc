@@ -19,9 +19,9 @@ module "bigquery" {
 
 # Surface the module outputs at the environment level so they can be
 # referenced by other modules or consumed by CI/CD pipelines.
-output "staging_dataset_id"             { value = module.bigquery.staging_dataset_id }
-output "analytics_dataset_id"           { value = module.bigquery.analytics_dataset_id }
-output "orchestration_dataset_id"       { value = module.bigquery.orchestration_dataset_id }
+output "staging_dataset_id" { value = module.bigquery.staging_dataset_id }
+output "analytics_dataset_id" { value = module.bigquery.analytics_dataset_id }
+output "orchestration_dataset_id" { value = module.bigquery.orchestration_dataset_id }
 output "pipeline_service_account_email" { value = module.bigquery.pipeline_service_account_email }
-output "dbt_service_account_email"      { value = module.bigquery.dbt_service_account_email }
-output "staging_bucket_name"            { value = module.bigquery.staging_bucket_name }
+output "dbt_service_account_email" { value = module.bigquery.dbt_service_account_email }
+output "staging_bucket_name" { value = module.bigquery.staging_bucket_name }
