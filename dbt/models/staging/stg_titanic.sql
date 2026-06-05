@@ -26,7 +26,7 @@ renamed AS (
       WHEN 1 THEN 'First'
       WHEN 2 THEN 'Second'
       WHEN 3 THEN 'Third'
-      ELSE 'Unknown'
+      ELSE NULL
     END                                     AS passenger_class_name,
     pclass                                  AS passenger_class_num,
 
