@@ -17,7 +17,7 @@ cleaned AS (
     CASE vendor_id
       WHEN 1 THEN 'Creative Mobile Technologies'
       WHEN 2 THEN 'VeriFone Inc'
-      ELSE 'Unknown'
+      ELSE Null
     END                                             AS vendor_name,
     vendor_id,
 
@@ -70,7 +70,7 @@ cleaned AS (
       WHEN 4 THEN 'Nassau/Westchester'
       WHEN 5 THEN 'Negotiated Fare'
       WHEN 6 THEN 'Group Ride'
-      ELSE 'Unknown'
+      ELSE Null
     END                                             AS rate_type,
 
     -- Payment type: expand to name
@@ -82,7 +82,7 @@ cleaned AS (
       WHEN 4 THEN 'Dispute'
       WHEN 5 THEN 'Unknown'
       WHEN 6 THEN 'Voided Trip'
-      ELSE 'Other'
+      ELSE Null
     END                                             AS payment_method,
 
     -- Financials: ensure non-negative

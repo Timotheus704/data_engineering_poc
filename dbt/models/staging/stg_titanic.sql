@@ -26,9 +26,14 @@ renamed AS (
       WHEN 1 THEN 'First'
       WHEN 2 THEN 'Second'
       WHEN 3 THEN 'Third'
-      ELSE NULL
+      ELSE 'Unknown'
     END                                     AS passenger_class_name,
-    pclass                                  AS passenger_class_num,
+    CASE pclass
+      WHEN 1 THEN 1
+      WHEN 2 THEN 2
+      WHEN 3 THEN 3
+      ELSE NULL
+    END                                     AS passenger_class_num,
 
     -- Name: trim whitespace that can sneak in from CSV parsing
     TRIM(name)                              AS full_name,
@@ -61,7 +66,12 @@ renamed AS (
       WHEN 'S' THEN 'Southampton'
       ELSE 'Unknown'
     END                                     AS embarkation_port,
-    embarked                                AS embarkation_code
+    CASE embarked
+      WHEN 'C' THEN 'C'
+      WHEN 'Q' THEN 'Q'
+      WHEN 'S' THEN 'S'
+      ELSE NULL
+    END                                     AS embarkation_code
 
   FROM source
 )
