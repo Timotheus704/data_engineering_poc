@@ -24,6 +24,7 @@ The analogy: CI is like a spell-checker that runs every time you save a document
     ├── db-migrate.yml    ← Validates and runs SQL migrations
     ├── dbt-ci.yml        ← Validates dbt parse/test against Postgres
     ├── python-ci.yml     ← Compiles, lints, and tests Python pipelines
+    ├── terraform-ci.yml  ← Formats and validates Terraform modules
     └── app-ci.yml        ← Builds and smoke-tests the TypeScript CLI app
 ```
 

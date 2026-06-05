@@ -25,7 +25,7 @@ models:
                 values: [true, false]
                 quote: false
       - name: passenger_class_num
-        description: "Passenger travel class as an integer (1 = 1st, 2 = 2nd, 3 = 3rd)."
+        description: "Passenger travel class as an integer (1 = 1st, 2 = 2nd, 3 = 3rd, Null = Unknown)."
         tests:
           - accepted_values:
               arguments:

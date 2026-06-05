@@ -21,7 +21,7 @@ sys.path.insert(
     0, str(Path(__file__).parent.parent / "pipelines" / "streaming")
 )
 
-from consumer import (
+from consumer import (  # noqa: E402
     ValidationError,
     validate_event,
     compute_source_row_hash,

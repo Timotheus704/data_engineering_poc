@@ -58,7 +58,7 @@ describe('API Integration Tests', () => {
     jest.clearAllMocks(); // Clears call history and mock implementations
 
     // Reset and set default successful mocks for DB interactions
-    mockQuery.mockResolvedValue([{ 1: 1 }]);
+    mockQuery.mockResolvedValue([{ version: 'PostgreSQL 16.0' }]);
     mockRunReadOnlyQuery.mockResolvedValue([{ ok: 1 }]);
     mockPoolQuery.mockResolvedValue({ rows: [{ 1: 1 }], rowCount: 1 });
 

@@ -17,6 +17,6 @@ variable "environment" {
 
 variable "project_prefix" {
   description = "Short prefix used for naming in the environment"
-  type = string
-  default = "pocdev"
+  type        = string
+  default     = "pocdev"
 }
