@@ -233,6 +233,43 @@ done
 - Keep full-refresh mode available for local resets and reproducible demos.
 - Keep cleaning logic close to ingestion unless it is a true transformation, in which case prefer dbt.
 
+### Failure Mode Analysis
+
+Every pipeline function that performs I/O — file reads, database 
+writes, external API calls — must include a failure mode analysis 
+in its docstring. The analysis must name:
+
+1. The specific failure condition
+2. The state of the system when the failure occurs
+3. Whether existing data is at risk
+4. The resolution path
+
+This is not defensive programming for its own sake. It is 
+documentation that an on-call engineer can read at 2am to 
+understand what happened and what to do. The value is not in 
+preventing failures — it is in making failures legible.
+
+Format:
+
+```python
+def my_function() -> None:
+    """
+    [What the function does.]
+
+    Failure modes:
+    - [Specific condition]: [system state]. [Data at risk?].
+      Resolution: [what to do].
+    - [Specific condition]: [system state]. [Data at risk?].
+      Resolution: [what to do].
+    """
+```
+
+Reference implementations: `pipelines/nyc_taxi/ingest.py` — 
+`download_data()`, `load_and_clean()`, `ingest_full_refresh()`.
+
+When adding a new pipeline function that performs I/O, failure 
+mode analysis is required before the PR can be merged.
+
 ### TypeScript CLI and API
 
 - Strict TypeScript. Do not use `any`.

@@ -30,34 +30,36 @@ const hasCollector = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const { Resource } = require('@opentelemetry/resources');
 
 // Choose exporter based on environment
-const traceExporter = (isProduction && hasCollector)
-  ? new OTLPTraceExporter({
-      url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-    })
-  : new ConsoleSpanExporter();  // Development: print to console
-
-const sdk = new NodeSDK({
-  resource: new Resource({
-    [ATTR_SERVICE_NAME]: 'poc-data-api',
-    [ATTR_SERVICE_VERSION]: '1.0.0',
-    [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]:
-      process.env.NODE_ENV ?? 'development',
-  }),
-  traceExporter,
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      // Instrument pg queries — captures SQL, table name, duration
-      '@opentelemetry/instrumentation-pg': { enhancedDatabaseReporting: true },
-      // Instrument HTTP — captures all incoming requests automatically
-      '@opentelemetry/instrumentation-http': { enabled: true },
-      // Disable noisy file system instrumentation
-      '@opentelemetry/instrumentation-fs': { enabled: false },
-    }),
-  ],
-});
+let sdk: NodeSDK | null = null;
 
 // Initialize before importing any other modules
 export function initTracing(): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const hasCollector = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+
+  const traceExporter = (isProduction && hasCollector)
+    ? new OTLPTraceExporter({
+        url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+      })
+    : new ConsoleSpanExporter();
+
+  sdk = new NodeSDK({
+    resource: new Resource({
+      [ATTR_SERVICE_NAME]: 'poc-data-api',
+      [ATTR_SERVICE_VERSION]: '1.0.0',
+      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]:
+        process.env.NODE_ENV ?? 'development',
+    }),
+    traceExporter,
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-pg': { enhancedDatabaseReporting: true },
+        '@opentelemetry/instrumentation-http': { enabled: true },
+        '@opentelemetry/instrumentation-fs': { enabled: false },
+      }),
+    ],
+  });
+
   sdk.start();
   console.log(`[tracing] OpenTelemetry initialized (exporter: ${
     isProduction && hasCollector ? 'OTLP' : 'console'
@@ -65,7 +67,7 @@ export function initTracing(): void {
 
   // Gracefully shut down on process exit
   process.on('SIGTERM', () => {
-    sdk.shutdown()
+    sdk?.shutdown()
       .then(() => console.log('[tracing] Tracing terminated'))
       .catch(console.error)
       .finally(() => process.exit(0));
