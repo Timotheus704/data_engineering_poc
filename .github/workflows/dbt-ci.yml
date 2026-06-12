@@ -100,7 +100,7 @@ jobs:
         run: |
           dbt parse --profiles-dir .
 
-      - name: dbt test
+      - name: dbt build
         working-directory: dbt
         run: |
-          dbt test --profiles-dir .
+          dbt build --profiles-dir .
